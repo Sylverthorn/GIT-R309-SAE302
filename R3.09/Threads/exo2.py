@@ -2,7 +2,7 @@ import threading
 
 
 def count(n, thread):
-    for i in range(n, 0);
+    for i in range(n, 0):
         print(f"Thread {thread} : {i}")
 
 
