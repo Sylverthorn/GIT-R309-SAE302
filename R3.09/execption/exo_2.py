@@ -10,8 +10,10 @@ def open_file(file_name):
         print('File not found')
     except PermissionError:
         print('Permission denied')
-    except Exception as e:
-        print('An error occurred:', e)
+    except FileExistsError:
+        print('File already exists')
+    except IOError:
+        print('An error occurred while reading the file')
 
 
 def main():

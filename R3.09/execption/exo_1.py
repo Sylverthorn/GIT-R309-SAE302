@@ -1,15 +1,17 @@
 
 def divEntier(x: int, y: int) -> int:
-    try:
-        if x < y:
-            return 0
-        else:
-            x = x - y
-            return divEntier(x, y) + 1
-    except x < 0 or y < 0:
+    if x < 0 or y < 0:
         print("Erreur: Division par 0")
-    except y == 0:
-        print("Erreur: Division par 0")
+    else :
+        try:
+            if x < y:
+                return 0
+            else:
+                x = x - y
+                return divEntier(x, y) + 1
+        
+        except y == 0:
+            print("Erreur: Division par 0")
 
 
 
