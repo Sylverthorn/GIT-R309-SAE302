@@ -1,9 +1,10 @@
 import threading
-
+import time
 
 def count(n, thread):
     for i in range(n, 0):
         print(f"Thread {thread} : {i}")
+        time.sleep(1)
 
 
 t1 = threading.Thread(target=count, args=(5, 1))
