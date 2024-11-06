@@ -22,7 +22,7 @@ while True:
 
     
     if message.lower() == "bye":
-        print("Client is disconnecting...")
+        print("Deconnexion du client...")
         client_socket.close()
         break
     elif message.lower() == "arret":

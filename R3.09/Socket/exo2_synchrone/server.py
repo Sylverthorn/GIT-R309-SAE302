@@ -12,12 +12,12 @@ print("Server connecté sur le port: " + str(port))
 while True:
     server_socket.listen(1)
     connection, address = server_socket.accept()
-    print("Connection from: " + str(address))
+    print("Connection client : " + str(address))
 
     while True:
         try:
             message = connection.recv(1024).decode()
-            print("Message from client: " + message)
+            print("Message du client: " + message)
 
             if message.lower() == "arret":
                 print("deconnection...")
