@@ -57,7 +57,8 @@ class Server:
             except ConnectionResetError:
                 print("Client déconnecté.")
                 self.boucle = False
-                self.__reconnexion()
+                client.close()
+                
                 break
 
 
