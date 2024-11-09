@@ -16,21 +16,18 @@ class Server:
         self.server_socket.listen(1)
         print("Server connecté sur le port: " + str(self.port))
 
-        self.connection, address = self.server_socket.accept()
-        print("Connexion client : " + str(address))
+
 
 
     def __reconnexion(self):
-        self.server_socket.close()
-        self.server_socket = socket.socket()
         self.__connect()
 
 
 # fonction qui envoi un message au client
 
-    def __envoi_message(self, message):
+    def __envoi_message(self, message, client=None):
         try:
-            self.connection.send(message.encode())
+            client.send(message.encode())
 
         except (ConnectionResetError, BrokenPipeError):
             print("Client déconnecté.")
@@ -39,21 +36,21 @@ class Server:
 
 # fonction qui recoit les messages du client et les traites
 
-    def __recois(self):
+    def __recois(self, client=None):
         while self.boucle:
             try:
-                message = self.connection.recv(1024).decode()
+                message = client.recv(1024).decode()
                 if message:
                     print("Message du client:", message)
 
                     réponse = "Bien reçu !"
-                    threading.Thread(target=self.__envoi_message , args=(réponse,)).start()
+                    threading.Thread(target=self.__envoi_message , args=(réponse, client,)).start()
 
                 if message.lower() == "arret":
                     print("Déconnexion demandée par le client...")
                     self.boucle = False
 
-                    self.connection.close()
+                    client.close()
                     self.server_socket.close()
                     break
 
@@ -69,10 +66,14 @@ class Server:
     def start(self):
         self.__connect()
 
-        receive_thread = threading.Thread(target=self.__recois)
-        receive_thread.start()
+        while True:
+            client, address = self.server_socket.accept()
+            print("Connexion client : " + str(address))
+        
+            receive_thread = threading.Thread(target=self.__recois, args=(client,))
+            receive_thread.start()
 
-        receive_thread.join()
+            
 
 if __name__ == "__main__":
     server = Server(12345)
