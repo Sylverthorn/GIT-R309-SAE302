@@ -29,7 +29,7 @@ class Server:
         try:
             client.send(message.encode())
 
-        except (ConnectionResetError, BrokenPipeError):
+        except ConnectionResetError:
             print("Client déconnecté.")
             self.boucle = False
             self.__reconnexion()
