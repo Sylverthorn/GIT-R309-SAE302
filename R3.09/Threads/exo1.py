@@ -1,9 +1,10 @@
 import threading
-
+import time
 
 def affiche(n):
     for i in range(1, 6):
         print(i,": je suis le thread", n)
+        time.sleep(1)
 
 
 t1 = threading.Thread(target=affiche, args=(1,))

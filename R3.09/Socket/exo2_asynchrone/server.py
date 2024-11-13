@@ -1,6 +1,6 @@
 import socket
 import threading
-
+import time
 class Server:
     def __init__(self, port, hosts='0.0.0.0'):
         self.port = port
@@ -9,7 +9,6 @@ class Server:
         self.connection = None
         self.boucle = True
 
-# fonction qui connecte le serveur et le client
 
     def __connect(self):
         self.server_socket.bind((self.hosts, self.port))
@@ -26,29 +25,36 @@ class Server:
         self.__connect()
 
 
-# fonction qui envoi un message au client
 
-    def __envoi_message(self, message):
-        try:
-            self.connection.send(message.encode())
+    def __envoi_message(self):
+        while self.boucle:
+            try:
+                message = input("Enter message: ")
+                self.connection.send(message.encode())
+                time.sleep(1)
 
-        except (ConnectionResetError, BrokenPipeError):
-            print("Client déconnecté.")
-            self.boucle = False
-            self.__reconnexion()
+            
+                if message.lower() == "arret":
+                    print("Client et serveur s'arrêtent...")
+                    self.server_socket.close()
+                    self.boucle = False
+                    break
 
-# fonction qui recoit les messages du client et les traites
+            except ConnectionResetError:
+                self.__reconnexion()
+            
+            except KeyboardInterrupt:
+                print("Arret du client ...")
+                self.client_socket.close()
+                break
+
 
     def __recois(self):
         while self.boucle:
             try:
                 message = self.connection.recv(1024).decode()
-                if message:
-                    print("Message du client:", message)
-
-                    réponse = "Bien reçu !"
-                    threading.Thread(target=self.__envoi_message , args=(réponse,)).start()
-
+                print("\nMessage du client:", message)
+                print('\nEnter message: ', end="")
                 if message.lower() == "arret":
                     print("Déconnexion demandée par le client...")
                     self.boucle = False
@@ -64,14 +70,18 @@ class Server:
                 break
 
 
-# fonction qui lance le serveur
 
     def start(self):
         self.__connect()
 
+
+        send_thread = threading.Thread(target=self.__envoi_message)
         receive_thread = threading.Thread(target=self.__recois)
+
+        send_thread.start()
         receive_thread.start()
 
+        send_thread.join()
         receive_thread.join()
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@ import threading
 import time
 
 def count(n, thread):
-    for i in range(n, 0):
+    for i in range(n, 0, -1):
         print(f"Thread {thread} : {i}")
         time.sleep(1)
 

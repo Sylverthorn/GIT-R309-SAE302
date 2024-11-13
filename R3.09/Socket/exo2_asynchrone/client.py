@@ -52,7 +52,7 @@ class Client():
                     break
 
             except ConnectionResetError:
-                self.__reconexion()
+                self.__reconnexion()
             
             except KeyboardInterrupt:
                 print("Arret du client ...")
@@ -68,7 +68,8 @@ class Client():
         while self.boucle:
             try:
                 reply = self.client_socket.recv(1024).decode()
-                print("Réponse du serveur:", reply)
+                print("\nRéponse du serveur:", reply)
+                print('\nEnter message: ', end='')
             except ConnectionResetError:
                 self.__reconexion()
             except ConnectionAbortedError:
