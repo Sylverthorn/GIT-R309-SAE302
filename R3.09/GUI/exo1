@@ -1,0 +1,49 @@
+import sys
+from PyQt6.QtWidgets import *
+
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+
+
+        self.__nom = None
+
+
+        self.setWindowTitle("TITRE")
+        
+        layout = QVBoxLayout()
+        
+        layout.addWidget(QLabel("saisir votre nom : "), 0)
+        self.text = QLineEdit()
+        self.bouton = QPushButton("ok")
+        self.label = QLabel(self.__nom)
+        self.bouton_quitter = QPushButton("quitter")
+
+        layout.addWidget(self.text, 1)
+        layout.addWidget(self.bouton, 2)
+        layout.addWidget(self.label, 3)
+        layout.addWidget(self.bouton_quitter, 4)
+
+        self.bouton.clicked.connect(self.display_text)
+        self.bouton_quitter.clicked.connect(self.close)
+
+            
+        widget = QWidget()
+            
+        
+        widget.setLayout(layout)
+        self.setCentralWidget(widget)
+
+
+    def display_text(self):
+                text = self.text.text()
+                self.label.setText('Bonjour, ' + text)
+                
+
+
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    window = MainWindow()
+    window.show()
+    sys.exit(app.exec())
