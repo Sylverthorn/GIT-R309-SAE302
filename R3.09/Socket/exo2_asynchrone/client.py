@@ -66,7 +66,13 @@ class Client():
             try:
                 reply = self.client_socket.recv(1024).decode()
                 if reply:
-                    print("Message du serveur:", reply)
+                    if reply.lower() == "arret":
+                        print("arret ...")
+                        self.client_socket.close()
+                        self.boucle = False
+                        break
+                    else :
+                        print("Message du serveur:", reply)
                 
             except ConnectionResetError:
                 self.__reconnexion()
