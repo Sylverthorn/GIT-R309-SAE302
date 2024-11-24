@@ -9,17 +9,17 @@ class Client():
         self.client_socket = socket.socket()
         self.boucle = True
 
-    def __connect(self):
+    def connect(self):
         try:
             self.client_socket.connect((self.host, self.port))
         except ConnectionRefusedError:
             try:
                 print("Connexion refusée. Le serveur ne fonctionne pas.")
-                for i in range(5):
+                for _ in range(5):
                     time.sleep(1)
                     print(".", end="")
                 print()
-                self.__connect()
+                self.connect()
 
             except KeyboardInterrupt:
                 print("Arret du client ...")
@@ -29,13 +29,13 @@ class Client():
         print("Serveur en panne, reconnexion...")
         self.client_socket.close()
         self.client_socket = socket.socket()
-        self.__connect()
+        self.connect()
 
 
-    def __envoi_message(self):
+    def envoi_message(self):
         while self.boucle:
             try:
-                message = input("Enter message: ")
+                message = input("\nEnter message: ")
                 self.client_socket.send(message.encode())
                 time.sleep(1)
 
@@ -59,30 +59,31 @@ class Client():
                 self.client_socket.close()
                 break
 
-            
-            except ConnectionAbortedError:
-                break
                 
 
-    def __recois(self):
+    def recois(self):
         while self.boucle:
             try:
                 reply = self.client_socket.recv(1024).decode()
-                print("\nRéponse du serveur:", reply)
-                print('\nEnter message: ', end='')
+                if reply:
+                    print("Message du serveur:", reply)
+                
             except ConnectionResetError:
-                self.__reconexion()
+                self.__reconnexion()
             except ConnectionAbortedError:
+                break
+            except OSError:
+                print("client et serveur arreté.")
                 break
 
 
 
     def start(self):
         self.boucle = True
-        self.__connect()
+        self.connect()
 
-        send_thread = threading.Thread(target=self.__envoi_message)
-        receive_thread = threading.Thread(target=self.__recois)
+        send_thread = threading.Thread(target=self.envoi_message)
+        receive_thread = threading.Thread(target=self.recois)
 
         send_thread.start()
         receive_thread.start()
