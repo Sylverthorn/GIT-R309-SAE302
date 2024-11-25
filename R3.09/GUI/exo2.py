@@ -17,7 +17,7 @@ class MainWindow(QMainWindow):
         
         layout.addWidget(QLabel("Temperature : "), 0, 0)
         self.text = QLineEdit()
-        self.resultat = QLineEdit(enabled=False)
+        self.resultat = QLineEdit(readOnly = True)
         self.label = QLabel("Conversion : ")
         self.bouton = QPushButton("convertir")
         self.celsius = QLabel("°C")
@@ -26,8 +26,8 @@ class MainWindow(QMainWindow):
         self.bouton_quitter = QPushButton("quitter")
         self.aide = QPushButton("?")
         self.combo = QComboBox(self)
-        self.combo.addItem("°C --> °K")
-        self.combo.addItem("°K --> °C")
+        self.combo.addItem("°C --> K")
+        self.combo.addItem("K --> °C")
 
 
 
