@@ -6,6 +6,8 @@ import threading
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        
+
 
         self.setWindowTitle("Conversion de temperature")
         self.setGeometry(200, 200, 500, 500)
@@ -29,6 +31,12 @@ class MainWindow(QMainWindow):
         
 
 
+        self.addr = self.Serveur.text()
+        self.por = self.Port.text()
+        self.client = Client(int(self.por) , self.addr) 
+
+
+
         layout.addWidget(self.servlabel, 0, 0)
         layout.addWidget(self.portlabel, 1, 0)
         
@@ -40,12 +48,12 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.text , 5, 0, 1, 2)
 
 
-        layout.addWidget(self.bouton_quitter, 5, 0)
+        layout.addWidget(self.bouton_quitter, 6, 0)
         
 
+    
 
-
-        self.bouton.clicked.connect(self.demarrage)
+        self.bouton.clicked.connect(self.threaddemarrage)
 
         self.bouton_quitter.clicked.connect(self.close)
             
@@ -55,29 +63,22 @@ class MainWindow(QMainWindow):
         widget.setLayout(layout)
         self.setCentralWidget(widget)
 
-
+    
 
     def demarrage(self):
-        texte = self.bouton.text()
-        
-        self.addr = self.Serveur.text()
-        self.port = self.Port.text()
-        
-        
-        client = Client(int(self.port) , self.addr)   
-
-
-        if texte == 'Connexion':
+    
+        if self.client.state == 'shutdown':
             self.bouton.setText('Déconnexion')
-            
-            thread = threading.Thread(target=client.connect)
-            thread.start()
+            self.client.connect()
         
-        elif texte == 'Déconnexion':
+        elif self.client.state == 'running':
             self.bouton.setText("Connexion")
-            thread = threading.Thread(target=client.arret,)
-            thread.start()
+            self.client.arret()
 
+
+    def threaddemarrage(self):
+        thread = threading.Thread(target=self.demarrage)
+        thread.start()
 
     def load_servers(self):
         try:

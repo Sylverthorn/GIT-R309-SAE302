@@ -6,6 +6,7 @@ class Server:
     def __init__(self, port, hosts='0.0.0.0'):
         self.port = port
         self.hosts = hosts 
+        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.boucle = True
 
@@ -27,6 +28,7 @@ class Server:
 
     def __recois(self, client=None):
         while self.boucle:
+            self.toujours_là(client)
             try:
                 message = client.recv(1024).decode()
                 if message:
@@ -56,9 +58,8 @@ class Server:
                     
 
             except ConnectionResetError:
-                print("Client déconnecté.")
+                print(f"Client déconnecté : {client}")
                 self.boucle = False
-                client.close()
                 break
 
     def handle_client(self, client):
@@ -66,20 +67,30 @@ class Server:
 
     def accept(self):
         while self.boucle:
-            try :
+            try:
                 client, address = self.server_socket.accept()
                 print("Connexion client : " + str(address))
                 
                 client_thread = threading.Thread(target=self.handle_client, args=(client,))
                 client_thread.start()
-            except OSError:
+
+            except OSError as e:
                 print("Server arrêté.")
+                print(e)
                 break
+
+    def toujours_là(self, client):
+        try:
+            self.__envoi_message('hello', client)
+        except ConnectionResetError:
+            self.boucle = False
+            print(f"Client déconnecté : {client}")
+            return
 
     def start(self):
         self.__connect()
         self.accept()
 
 if __name__ == "__main__":
-    server = Server(12345)
+    server = Server(4200)
     server.start()

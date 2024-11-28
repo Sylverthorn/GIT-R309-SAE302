@@ -8,25 +8,38 @@ class Client():
         self.host = host
         self.client_socket = socket.socket()
         self.boucle = True
+        self.state = "shutdown"
 
     def connect(self):
+        self.state = "running"
+        print("Client en marche !")
+        print("Connexion au serveur ...")
         try:
             self.client_socket.connect((self.host, self.port))
-            print('connexion ...')
+            print('Connexion établie avec le serveur')
+
+
         except ConnectionRefusedError:
-            try:
+            
                 print("Connexion refusée. Le serveur ne fonctionne pas.")
-                for _ in range(5):
+                i = 0
+                while i != 5:
                     time.sleep(1)
-                    try:
-                        self.client_socket.connect((self.host, self.port))
-                    except ConnectionRefusedError:
-                        print("Connexion refusée. Le serveur ne fonctionne pas.")
 
+                    if self.state == "shutdown":
+                        return
 
-            except KeyboardInterrupt:
-                print("Arret du client ...")
-                exit()
+                    else:
+                        try:
+                            self.client_socket.connect((self.host, self.port))
+                            print('Connexion établie avec le serveur')
+                            break
+                        except ConnectionRefusedError:
+                            print("Connexion refusée. Le serveur ne fonctionne pas.")
+                            i += 1
+
+        except OSError:
+            self.__reconnexion()
 
     def __reconnexion(self):
         print("Serveur en panne, reconnexion...")
@@ -40,7 +53,7 @@ class Client():
             try:
                 
                 self.client_socket.send(message.encode())
-                time.sleep(1)
+                time.sleep(0,3)
 
                 if message.lower() == "bye":
                     print("Déconnexion du client...")
@@ -95,9 +108,18 @@ class Client():
 
     def arret(self):
         self.boucle = False
-        self.client_socket.close()
+        self.state = "shutdown"
+        try :
+            self.client_socket.shutdown(socket.SHUT_RDWR)
+            print("Arret du client ...")
+        except OSError or ConnectionResetError:
+            return
 
-    def start(self):
+
+
+
+
+    def __start(self):
         self.boucle = True
         self.connect()
 
@@ -112,4 +134,4 @@ class Client():
 
 if __name__ == "__main__":
     client = Client(12345)
-    client.start()
+    client.__start()
