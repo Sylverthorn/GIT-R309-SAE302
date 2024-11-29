@@ -10,13 +10,21 @@ class Server:
         self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.boucle = True
 
+
+
     def __connect(self):
+        self.boucle = True
         self.server_socket.bind((self.hosts, self.port))
         self.server_socket.listen(1)
         print("Server connecté sur le port: " + str(self.port))
 
+
+
     def __reconnexion(self):
+        self.boucle = True
         self.__connect()
+
+
 
     def __envoi_message(self, message, client=None):
         try:
@@ -26,8 +34,10 @@ class Server:
             self.boucle = False
             self.__reconnexion()
 
+
+
     def __recois(self, client=None):
-        while self.boucle:
+        while True:
             self.toujours_là(client)
             try:
                 message = client.recv(1024).decode()
@@ -62,11 +72,15 @@ class Server:
                 self.boucle = False
                 break
 
+
+
     def handle_client(self, client):
         self.__recois(client)
 
+
+
     def accept(self):
-        while self.boucle:
+        while True:
             try:
                 client, address = self.server_socket.accept()
                 print("Connexion client : " + str(address))
@@ -79,13 +93,18 @@ class Server:
                 print(e)
                 break
 
+
+
     def toujours_là(self, client):
         try:
             self.__envoi_message('hello', client)
+            print("Client toujours connecté.")
         except ConnectionResetError:
             self.boucle = False
             print(f"Client déconnecté : {client}")
             return
+
+
 
     def start(self):
         self.__connect()

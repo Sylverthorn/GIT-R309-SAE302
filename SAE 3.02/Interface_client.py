@@ -53,7 +53,7 @@ class MainWindow(QMainWindow):
 
     
 
-        self.bouton.clicked.connect(self.threaddemarrage)
+        self.bouton.clicked.connect(self.demarrage)
 
         self.bouton_quitter.clicked.connect(self.close)
             

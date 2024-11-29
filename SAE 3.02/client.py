@@ -7,6 +7,7 @@ class Client():
         self.port = port
         self.host = host
         self.client_socket = socket.socket()
+        self.client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.boucle = True
         self.state = "shutdown"
 
@@ -98,6 +99,8 @@ class Client():
                 print("client et serveur arreté.")
                 break
     
+
+
     def envoi(self, message):
         send_thread = threading.Thread(target=self.__envoi_message)
         send_thread.start()
@@ -111,8 +114,10 @@ class Client():
         self.state = "shutdown"
         try :
             self.client_socket.shutdown(socket.SHUT_RDWR)
+            self.client_socket.close()
             print("Arret du client ...")
         except OSError or ConnectionResetError:
+            print("erreur")
             return
 
 
