@@ -1,6 +1,7 @@
 import socket
 import threading
 import time
+import os
 
 class Client():
     def __init__(self, port, host='127.0.0.1'):
@@ -8,7 +9,6 @@ class Client():
         self.host = host
         self.client_socket = socket.socket()
         self.client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.boucle = True
         self.state = "shutdown"
 
     def connect(self):
@@ -18,6 +18,8 @@ class Client():
         try:
             self.client_socket.connect((self.host, self.port))
             print('Connexion établie avec le serveur')
+            self.state = "running"
+            self.recois()
 
 
         except ConnectionRefusedError:
@@ -25,7 +27,7 @@ class Client():
                 print("Connexion refusée. Le serveur ne fonctionne pas.")
                 i = 0
                 while i != 5:
-                    time.sleep(1)
+                    time.sleep(0.3)
 
                     if self.state == "shutdown":
                         return
@@ -34,32 +36,45 @@ class Client():
                         try:
                             self.client_socket.connect((self.host, self.port))
                             print('Connexion établie avec le serveur')
+                            self.state = "running"
+                            self.recois()
                             break
                         except ConnectionRefusedError:
                             print("Connexion refusée. Le serveur ne fonctionne pas.")
                             i += 1
 
+                        if i == 5:
+                            print("Connexion impossible, le serveur ne fonctionne pas.")
+                            self.state = "shutdown"
+                            self.client_socket.close()
+                            return
         except OSError:
             self.__reconnexion()
+
+
 
     def __reconnexion(self):
         print("Serveur en panne, reconnexion...")
         self.client_socket.close()
+        self.state = "shutdown"
         self.client_socket = socket.socket()
         self.connect()
 
 
     def __envoi_message(self, message):
-        while self.boucle:
             try:
-                
-                self.client_socket.send(message.encode())
-                time.sleep(0,3)
+                if message == b'': 
+                    self.client_socket.send(message)
+                else:
+                    self.client_socket.send(message.encode())
+
+                time.sleep(0.3)
+
+                '''  arret à partir du terminal
 
                 if message.lower() == "bye":
                     print("Déconnexion du client...")
                     self.client_socket.close()
-                    self.boucle = False
                     break
 
                 elif message.lower() == "arret":
@@ -67,76 +82,81 @@ class Client():
                     self.client_socket.close()
                     self.boucle = False
                     break
-
+                '''
             except ConnectionResetError:
                 self.__reconnexion()
             
             except KeyboardInterrupt:
-                print("Arret du client ...")
+                print("efsdfArret du client ...")
                 self.client_socket.close()
-                break
+                self.state = "shutdown"
+                return
+            except OSError:
+                pass
 
                 
 
     def __recois_message(self):
-        while self.boucle:
+        while True:
+            threading.Thread(target=self.toujours_là).start()
+
+            if self.state == "shutdown":
+                break
             try:
                 reply = self.client_socket.recv(1024).decode()
                 if reply:
-                    if reply.lower() == "arret":
-                        print("arret ...")
-                        self.client_socket.close()
-                        self.boucle = False
-                        break
+                    if reply.lower() == "hello" or reply.lower() == "hellohello":
+                        pass
                     else :
                         print("Message du serveur:", reply)
                 
             except ConnectionResetError:
                 self.__reconnexion()
             except ConnectionAbortedError:
+                self.state = "shutdown"
                 break
             except OSError:
-                print("client et serveur arreté.")
+                self.state = "shutdown"
                 break
     
 
 
     def envoi(self, message):
-        send_thread = threading.Thread(target=self.__envoi_message)
+        send_thread = threading.Thread(target=self.__envoi_message, args=(message,))
         send_thread.start()
 
     def recois(self):
-        receive_thread = threading.Thread(target=self.recois)
-        receive_thread.start
+        receive_thread = threading.Thread(target=self.__recois_message)
+        receive_thread.start()
 
     def arret(self):
-        self.boucle = False
         self.state = "shutdown"
         try :
             self.client_socket.shutdown(socket.SHUT_RDWR)
             self.client_socket.close()
             print("Arret du client ...")
+            
         except OSError or ConnectionResetError:
             print("erreur")
+            self.state = "shutdown"
             return
 
+    def quitter(self):
+        self.arret()
+        print("Client arrêté proprement.")
+        os._exit(0)
+
+    def toujours_là(self):
+        try:
+            self.envoi(b"")
+            
+            
+        except ConnectionResetError:
+            print("Serveur déconnecté.")
+            self.__reconnexion()
 
 
-
-
-    def __start(self):
-        self.boucle = True
-        self.connect()
-
-        send_thread = threading.Thread(target=self.__envoi_message)
-        receive_thread = threading.Thread(target=self.recois)
-
-        send_thread.start()
-        receive_thread.start()
-
-        send_thread.join()
-        receive_thread.join()
 
 if __name__ == "__main__":
     client = Client(12345)
-    client.__start()
+    
