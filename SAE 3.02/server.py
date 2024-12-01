@@ -11,19 +11,13 @@ class Server:
         self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         
 
-
-
     def __connect(self):
         self.server_socket.bind((self.hosts, self.port))
         self.server_socket.listen(1)
         print("Server connecté sur le port: " + str(self.port))
 
-
-
     def __reconnexion(self):
         self.__connect()
-
-
 
     def __envoi_message(self, message, client=None, numero_client=None):
         try:
@@ -31,22 +25,23 @@ class Server:
                 client.send(message)
             else:
                 client.send(message.encode())
-
-        except ConnectionResetError:
-            print("Client déconnecté.")
-            client.close()
-            self.__reconnexion()
-        except ConnectionAbortedError:
-            pass
-
+        except Exception as e:
+            print(e)
 
 
     def __recois(self, client=None, numero_client=None):
         while True:
-            
+            self.toujours_là(client, numero_client)
             try:
-                self.toujours_là(client, numero_client)
-                message = client.recv(1024).decode()
+                
+                try:
+                    message = client.recv(1024).decode()
+                except Exception as e:
+                    #print(e)
+                    client.close()
+                    print(f"//Client_{numero_client} déconnecté.")
+                    break
+                
                 if message:
                     if message == b'':
                         pass
@@ -54,41 +49,15 @@ class Server:
                         print(f"Message de client_{numero_client} :", message)
                         réponse = "Bien reçu !"
                         threading.Thread(target=self.__envoi_message, args=(réponse, client, numero_client,)).start()
-
-
-                #pour arrêter le serveur et tout les clients
-                '''
-                if message.lower() == "arret":
-                    print("Déconnexion demandée par le client...")
-                    
-                        
-                   
-                    for client_thread in threading.enumerate():
-                        if client_thread is not threading.current_thread():
-                            try:
-                                client_thread._target.__self__.__envoi_message("arret", client_thread._args[0])
-                            except Exception as e:
-                                print(f"Erreur lors de l'envoi du message d'arrêt: {e}")
-                    self.server_socket.close()
-                    time.sleep(1)
-                    break
-                    '''
-                #pour déconnecter un client
-                '''
-                if message.lower() == "bye":
-                    print(f"Déconnexion du client : {client}...")
-                    client.close()
-                    break
-                ''' 
-
             except ConnectionResetError:
                 print(f"Client_{numero_client} déconnecté.")
                 client.close()
                 break
             except ConnectionAbortedError:
-                pass
-
-
+                print(f"Client_{numero_client} déconnecté.")
+                client.close()
+                break
+            
 
     def accept(self):
         while True:
@@ -99,23 +68,22 @@ class Server:
                 
                 client_thread = threading.Thread(target=self.__recois, args=(client, numero_client))
                 client_thread.start()
-
-            except OSError as e:
+                
+            except Exception as e:
                 print("Server arrêté.")
                 print(e)
                 break
 
-
-
     def toujours_là(self, client, numero_client):
-        try:
-            self.__envoi_message(b'', client)
-            
-        except ConnectionResetError:
-            client.close()
-            print(f"Client_{numero_client} déconnecté.")
-            return
 
+        time.sleep(1)
+        try:
+            self.__envoi_message('hello', client)
+            #print(f"Client_{numero_client} toujours connecté.")
+            
+        except Exception as e:
+            print(f"Client_{numero_client} déconnecté." + str(e))
+            
 
 
     def start(self):

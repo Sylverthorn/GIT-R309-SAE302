@@ -1,6 +1,5 @@
 import sys
 from PyQt6.QtWidgets import *
-from PyQt6.QtCore import QTimer
 from PyQt6.QtGui import QTextCursor
 from client import *
 import threading
@@ -46,7 +45,7 @@ class MainWindow(QMainWindow):
 
         
                 # Redirection des prints vers QTextEdit
-        self.redirect_stdout(self.text_log)
+        threading.Thread(target=self.redirect_stdout, args=(self.text_log,)).start()
 
 
 
@@ -89,10 +88,18 @@ class MainWindow(QMainWindow):
         if self.client.state == 'shutdown':
             self.bouton.setText('Déconnexion')
             self.client.connect()
+
+            self.text.setReadOnly(False)
+            self.bouton_envoyer.setEnabled(True)
+            
         
         elif self.client.state == 'running':
             self.bouton.setText("Connexion")
             self.client.arret()
+
+            self.text.setReadOnly(True)
+            self.bouton_envoyer.setEnabled(False)
+            
 
     def envoyer_message(self):
         message = self.text.toPlainText()
@@ -109,8 +116,22 @@ class MainWindow(QMainWindow):
         while True:
             if self.client.state == 'shutdown':
                 self.bouton.setText('Connexion')
+                self.text.setReadOnly(True)
+                self.text.setPlaceholderText("Veuillez vous connecter au serveur pour commencer.")
+                self.bouton_envoyer.setEnabled(False)
+                self.bouton_envoyer.setStyleSheet("background-color: grey;")
+                
+
+
             elif self.client.state == 'running':
                 self.bouton.setText('Déconnexion')
+                self.text.setReadOnly(False)
+                self.text.setPlaceholderText("")
+                self.bouton_envoyer.setEnabled(True)
+                self.bouton_envoyer.setStyleSheet("")
+                
+                
+
             time.sleep(1)
 
     def redirect_stdout(self, text_edit):
@@ -124,6 +145,10 @@ class MainWindow(QMainWindow):
 
         sys.stdout.write = write_to_text_edit
 
+    def closeEvent(self, event):
+        self.client.quitter()
+        QApplication.quit()
+        event.accept()
 '''
     def load_servers(self):
         try:

@@ -12,7 +12,7 @@ class Client():
         self.state = "shutdown"
 
     def connect(self):
-        self.state = "running"
+        self.state = "in progress"
         print("Client en marche !")
         print("Connexion au serveur ...")
         try:
@@ -20,6 +20,7 @@ class Client():
             print('Connexion établie avec le serveur')
             self.state = "running"
             self.recois()
+            
 
 
         except ConnectionRefusedError:
@@ -30,7 +31,7 @@ class Client():
                     time.sleep(0.3)
 
                     if self.state == "shutdown":
-                        return
+                        break
 
                     else:
                         try:
@@ -38,6 +39,7 @@ class Client():
                             print('Connexion établie avec le serveur')
                             self.state = "running"
                             self.recois()
+                            
                             break
                         except ConnectionRefusedError:
                             print("Connexion refusée. Le serveur ne fonctionne pas.")
@@ -98,7 +100,7 @@ class Client():
 
     def __recois_message(self):
         while True:
-            threading.Thread(target=self.toujours_là).start()
+            
 
             if self.state == "shutdown":
                 break
@@ -136,8 +138,9 @@ class Client():
             self.client_socket.close()
             print("Arret du client ...")
             
-        except OSError or ConnectionResetError:
-            print("erreur")
+        except Exception as e:
+            time.sleep(1.5)
+            print("Arret du client ...")
             self.state = "shutdown"
             return
 
@@ -146,14 +149,9 @@ class Client():
         print("Client arrêté proprement.")
         os._exit(0)
 
-    def toujours_là(self):
-        try:
-            self.envoi(b"")
-            
-            
-        except ConnectionResetError:
-            print("Serveur déconnecté.")
-            self.__reconnexion()
+
+
+    
 
 
 
