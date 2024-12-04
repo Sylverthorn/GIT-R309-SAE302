@@ -8,75 +8,70 @@ import os
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.nom_fichier = None
         
 
+        self.setWindowTitle("Conversion de température")
+        self.setGeometry(200, 200, 800, 400)
 
-        self.setWindowTitle("Conversion de temperature")
-        self.setGeometry(200, 200, 500, 500)
-
-
-        layout = QGridLayout()
-        
-
-        self.Serveur = QLineEdit("127.0.0.1")
-        self.Port = QLineEdit("4200")
-
+        # Widgets pour le premier grid
         self.servlabel = QLabel("Serveur : ")
+        self.Serveur = QLineEdit("127.0.0.1")
         self.portlabel = QLabel("Port : ")
-       
-
+        self.Port = QLineEdit("4200")
         self.bouton = QPushButton("Connexion")
+        self.fichier = QPushButton("Fichier")
         self.text = QTextEdit()
         self.bouton_envoyer = QPushButton("Envoyer")
-    
-        
-        self.bouton_quitter = QPushButton("quitter")
+        self.bouton_quitter = QPushButton("Quitter")
 
+        # Widgets pour le deuxième grid
+        self.resultat = QTextEdit(readOnly=True)
         self.text_log = QTextEdit(readOnly=True)
         self.text_log.setPlaceholderText("Logs...")
         self.text_log.setFixedHeight(100)
-        self.text_log.verticalScrollBar().setValue(self.text_log.verticalScrollBar().maximum())
         
 
+        # Premier grid layout
+        grid_left = QGridLayout()
+        grid_left.addWidget(self.servlabel, 0, 0)
+        grid_left.addWidget(self.Serveur, 0, 1)
+        grid_left.addWidget(self.portlabel, 1, 0)
+        grid_left.addWidget(self.Port, 1, 1)
+        grid_left.addWidget(self.bouton, 2, 0, 1, 2)
+        grid_left.addWidget(self.fichier, 3, 0, 1, 2)
+        grid_left.addWidget(self.text, 4, 0, 1, 2)
+        grid_left.addWidget(self.bouton_envoyer, 5, 1)
+        grid_left.addWidget(self.bouton_quitter, 5, 0)
+
+        # Deuxième grid layout
+        grid_right = QGridLayout()
+        grid_right.addWidget(self.resultat, 0, 0, 4, 1)
+        grid_right.addWidget(self.text_log, 4, 0)
+        
+        # Layout principal pour aligner les deux grids
+        main_layout = QHBoxLayout()
+        main_layout.addLayout(grid_left)
+        main_layout.addLayout(grid_right)
 
         self.addr = self.Serveur.text()
         self.por = self.Port.text()
         self.client = Client(int(self.por) , self.addr) 
 
         
-                # Redirection des prints vers QTextEdit
-        threading.Thread(target=self.redirect_stdout, args=(self.text_log,)).start()
-
-
-
-        layout.addWidget(self.servlabel, 0, 0)
-        layout.addWidget(self.portlabel, 1, 0)
-        
-
-        layout.addWidget(self.Serveur, 0, 1)
-        layout.addWidget(self.Port, 1, 1)
-
-        layout.addWidget(self.bouton, 4, 0 ,1 , 2)
-        layout.addWidget(self.text , 5, 0, 1, 2)
-
-
-        layout.addWidget(self.bouton_quitter, 6, 0)
-        layout.addWidget(self.bouton_envoyer, 6, 1)
-
-        layout.addWidget(self.text_log, 7, 0, 1, 2)
-    
-
         threading.Thread(target=self.state).start()
+        threading.Thread(target=self.redirect_stdout).start()
 
         self.bouton.clicked.connect(self.thread_demarrage)
         self.bouton_quitter.clicked.connect(self.ferme)
         self.bouton_envoyer.clicked.connect(self.envoyer_message)
-            
+        self.fichier.clicked.connect(self.choisir_fichier)
+
+
         widget = QWidget()
-            
-        
-        widget.setLayout(layout)
+        widget.setLayout(main_layout)
         self.setCentralWidget(widget)
+
 
     def ferme(self):
         threading.Thread(target=self.client.quitter).start()
@@ -102,9 +97,13 @@ class MainWindow(QMainWindow):
             
 
     def envoyer_message(self):
+        if self.nom_fichier:
+            with open(self.nom_fichier, 'w', encoding='utf-8') as file:
+                file.write(self.text.toPlainText())
         message = self.text.toPlainText()
         self.client.envoi(message)
         self.text.clear()
+        self.nom_fichier = None
 
 
     def thread_demarrage(self):
@@ -115,11 +114,15 @@ class MainWindow(QMainWindow):
     def  state(self):
         while True:
             if self.client.state == 'shutdown':
-                self.bouton.setText('Connexion')
+                self.bouton.setText("Connexion")
                 self.text.setReadOnly(True)
                 self.text.setPlaceholderText("Veuillez vous connecter au serveur pour commencer.")
+
                 self.bouton_envoyer.setEnabled(False)
                 self.bouton_envoyer.setStyleSheet("background-color: grey;")
+
+                self.fichier.setEnabled(False)
+                self.fichier.setStyleSheet("background-color: grey;")
                 
 
 
@@ -129,19 +132,44 @@ class MainWindow(QMainWindow):
                 self.text.setPlaceholderText("")
                 self.bouton_envoyer.setEnabled(True)
                 self.bouton_envoyer.setStyleSheet("")
+
+                self.fichier.setEnabled(True)
+                self.fichier.setStyleSheet("")
                 
                 
 
             time.sleep(1)
 
-    def redirect_stdout(self, text_edit):
+    def choisir_fichier(self):
+        
+        options = QFileDialog.Option.ReadOnly  
+        file_name, _ = QFileDialog.getOpenFileName(
+            self,
+            "Choisir un fichier",             
+            "",                                
+            
+            options=options
+        )
+        if file_name and os.path.isfile(file_name):
+            try:
+                with open(file_name, 'r', encoding='utf-8') as file:  
+                    self.text.setPlainText(file.read()) 
+            except Exception as e:
+                print(f"Erreur lors de la lecture du fichier : {e}")
+        else:
+            print("Aucun fichier sélectionné ou le chemin sélectionné est un dossier.")
+        
+        self.nom_fichier = file_name
+
+
+    def redirect_stdout(self):
         """Redirige sys.stdout pour écrire dans le QTextEdit."""
         def write_to_text_edit(text):
             print_sans_n = text.replace("\n", "").strip()  # Retirer les sauts de ligne
             if print_sans_n:  # Si le texte n'est pas vide
-                text_edit.append(print_sans_n)  # Ajouter le texte à QTextEdit
-                text_edit.moveCursor(QTextCursor.MoveOperation.End)  # Déplacer le curseur à la fin
-                text_edit.ensureCursorVisible()  # S'assurer que le curseur est visible
+                self.text_log.append(print_sans_n)  # Ajouter le texte à QTextEdit
+                self.text_log.moveCursor(QTextCursor.MoveOperation.End)  # Déplacer le curseur à la fin
+                self.text_log.ensureCursorVisible()  # S'assurer que le curseur est visible
 
         sys.stdout.write = write_to_text_edit
 

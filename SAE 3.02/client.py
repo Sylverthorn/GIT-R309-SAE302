@@ -123,6 +123,9 @@ class Client():
     
 
 
+
+    
+
     def envoi(self, message):
         send_thread = threading.Thread(target=self.__envoi_message, args=(message,))
         send_thread.start()

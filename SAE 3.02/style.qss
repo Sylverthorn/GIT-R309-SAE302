@@ -86,3 +86,4 @@ QPushButton#aide:hover {
 QPushButton#aide:pressed {
     background-color: #269abc;
 }
+
