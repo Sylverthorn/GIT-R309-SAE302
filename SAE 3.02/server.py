@@ -13,7 +13,7 @@ class Server:
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.secondary_servers = []  # Liste des serveurs secondaires en cours
-        self.max_tasks_per_server = 5  # Nombre max de tâches par serveur secondaire
+        self.max_taches = 5  # Nombre max de tâches par serveur secondaire
 
     def __connect(self):
         self.server_socket.bind((self.hosts, self.port))
@@ -66,48 +66,74 @@ class Server:
             print(f"Client_{numero_client} déconnecté : {e}")
 
     def handle_task(self, task, client, numero_client):
-        """
-        Gère une tâche en la déléguant à un serveur secondaire.
-        """
         available_server = None
         for server in self.secondary_servers:
-            if server['tasks'] < self.max_tasks_per_server:
+            if server['tasks'] < self.max_taches:
                 available_server = server
                 break
 
         if not available_server:
             # Si aucun serveur disponible, lancer un nouveau serveur secondaire
-            new_port = random.randint(5000, 6000)
-            
-            server_second_path = "SAE 3.02\\server_second.py"
-            
-            try:
-                if platform.system() == "Windows":
-                    process = subprocess.Popen(["start", "cmd", "/k", "python", server_second_path, str(new_port)], shell=True)
-                elif platform.system() == "Linux":
-                    process = subprocess.Popen(["gnome-terminal", "--", "python3", server_second_path, str(new_port)])
-                else:
-                    print("Lancement dans un nouveau terminal non pris en charge sur ce système.")
-                
-            except Exception as e:
-                    print(f"Erreur lors du lancement du serveur secondaire : {e}")
-
-            print(f"Nouveau serveur secondaire lancé sur le port {new_port}")
-            self.secondary_servers.append({'port': new_port, 'tasks': 0, 'process': process})
-            available_server = self.secondary_servers[-1]
+            available_server = self.creation_servsecond(available_server)
 
         # Envoyer la tâche au serveur secondaire disponible
-        try:
-            secondary_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            secondary_client.connect(('127.0.0.1', available_server['port']))
-            secondary_client.send(task.encode())
-            response = secondary_client.recv(1024).decode()
-            self.__envoi_message(response, client)
+        while True:
+            try:
+                secondary_server = self.envoi_tache(task, available_server, client)
+                break
+            except Exception as e:
+                print(f"Erreur lors de l'envoi de la tâche au serveur sur le port {available_server['port']} : {e}")
+                
+                self.secondary_servers.remove(available_server)
+                available_server = None
+
+                for server in self.secondary_servers:
+                    if server['tasks'] < self.max_taches:
+                        available_server = server
+                    break
+
+                if not available_server:
+                    print("Aucun serveur secondaire disponible pour traiter la tâche.")
+
+                    available_server = self.creation_servsecond(available_server)
+                    break
+    
+
+
+    def creation_servsecond(self, available_server):
+        new_port = random.randint(5000, 6000)
             
-            available_server['tasks'] += 1
-            print(f"Tâche déléguée au serveur secondaire sur le port {available_server['port']}")
+        server_second_path = "SAE 3.02\\server_second.py"
+        
+
+        try:
+            if platform.system() == "Windows":
+                process = subprocess.Popen(["start", "cmd", "/k", "python", server_second_path, str(new_port), str(self.max_taches)], shell=True)
+            elif platform.system() == "Linux":
+                process = subprocess.Popen(["gnome-terminal", "--", "python3", server_second_path, str(new_port), str(self.max_taches)])
+                print("Lancement dans un nouveau terminal non pris en charge sur ce système.")
+
+
+            
         except Exception as e:
-            print(f"Erreur lors de l'envoi de la tâche : {e}")
+                print(f"Erreur lors du lancement du serveur secondaire : {e}")
+
+        print(f"Nouveau serveur secondaire lancé sur le port {new_port}")
+        self.secondary_servers.append({'port': new_port, 'tasks': 0, 'process': process})
+        available_server = self.secondary_servers[-1]
+        return available_server
+    
+    def envoi_tache(self, task , available_server, client):
+        secondary_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        secondary_server.connect(('127.0.0.1', available_server['port']))
+        secondary_server.send(task.encode())
+        
+        response = secondary_server.recv(1024).decode()
+        self.__envoi_message(response, client)
+        
+        available_server['tasks'] += 1
+        print(f"Tâche déléguée au serveur secondaire sur le port {available_server['port']}")
+        return secondary_server
 
     def start(self):
         self.__connect()

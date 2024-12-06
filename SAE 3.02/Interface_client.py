@@ -11,7 +11,7 @@ class MainWindow(QMainWindow):
         self.nom_fichier = None
         
 
-        self.setWindowTitle("Conversion de température")
+        self.setWindowTitle("CLient")
         self.setGeometry(200, 200, 800, 400)
 
         # Widgets pour le premier grid
@@ -26,7 +26,7 @@ class MainWindow(QMainWindow):
         self.bouton_quitter = QPushButton("Quitter")
 
         # Widgets pour le deuxième grid
-        self.resultat = QTextEdit(readOnly=True)
+        self.resutat = QTextEdit(readOnly=True)
         self.text_log = QTextEdit(readOnly=True)
         self.text_log.setPlaceholderText("Logs...")
         self.text_log.setFixedHeight(100)
@@ -46,7 +46,7 @@ class MainWindow(QMainWindow):
 
         # Deuxième grid layout
         grid_right = QGridLayout()
-        grid_right.addWidget(self.resultat, 0, 0, 4, 1)
+        grid_right.addWidget(self.resutat, 0, 0, 4, 1)
         grid_right.addWidget(self.text_log, 4, 0)
         
         # Layout principal pour aligner les deux grids
@@ -61,6 +61,7 @@ class MainWindow(QMainWindow):
         
         threading.Thread(target=self.state).start()
         threading.Thread(target=self.redirect_stdout).start()
+        threading.Thread(target=self.resultat).start()
 
         self.bouton.clicked.connect(self.thread_demarrage)
         self.bouton_quitter.clicked.connect(self.ferme)
@@ -101,7 +102,11 @@ class MainWindow(QMainWindow):
             with open(self.nom_fichier, 'w', encoding='utf-8') as file:
                 file.write(self.text.toPlainText())
         message = self.text.toPlainText()
-        self.client.envoi(message)
+        if self.nom_fichier:
+            self.client.envoi(self.nom_fichier + "|" + message)
+        else:
+            self.client.envoi(message)
+
         self.text.clear()
         self.nom_fichier = None
 
@@ -172,6 +177,16 @@ class MainWindow(QMainWindow):
                 self.text_log.ensureCursorVisible()  # S'assurer que le curseur est visible
 
         sys.stdout.write = write_to_text_edit
+
+    def resultat(self):
+        while True:
+            if self.client.resultat:
+                self.resutat.append(self.client.resultat)
+                
+                self.resutat.ensureCursorVisible()
+                self.client.resultat = None
+                
+
 
     def closeEvent(self, event):
         self.client.quitter()

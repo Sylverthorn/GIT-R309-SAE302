@@ -11,6 +11,8 @@ class Client():
         self.client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.state = "shutdown"
 
+        self.resultat = None
+
     def connect(self):
         self.state = "in progress"
         print("Client en marche !")
@@ -107,9 +109,15 @@ class Client():
             try:
                 reply = self.client_socket.recv(1024).decode()
                 if reply:
-                    if reply.lower() == "hello" or reply.lower() == "hellohello":
+                    
+                    parts = reply.split("|")
+                    if len(parts) > 1 and parts[0] == 'resultat':
+                        self.resultat = parts[1]
+                        
+
+                    elif reply == 'hello':
                         pass
-                    else :
+                    else:
                         print("Message du serveur:", reply)
                 
             except ConnectionResetError:
