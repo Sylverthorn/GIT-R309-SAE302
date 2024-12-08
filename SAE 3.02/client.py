@@ -67,12 +67,14 @@ class Client():
 
     def __envoi_message(self, message):
             try:
-                if message == b'': 
-                    self.client_socket.send(message)
+                if isinstance(message, str):
+                    # Si c'est une chaîne, encode en UTF-8
+                    self.client_socket.send(message.encode('utf-8'))
+                elif isinstance(message, bytes):
+                    # Si c'est déjà en bytes, envoie directement
+                    self.client_socket.sendall(message)
                 else:
-                    self.client_socket.send(message.encode())
-
-                time.sleep(0.3)
+                    print("Format non valide : seul str ou bytes est accepté.")
 
                 '''  arret à partir du terminal
 

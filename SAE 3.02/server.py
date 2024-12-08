@@ -34,12 +34,14 @@ class Server:
 
     def __recois(self, client=None, numero_client=None):
         while True:
+            
             self.toujours_là(client, numero_client)
             try:
-                message = client.recv(1024).decode()
+                message = client.recv(10000).decode(errors='ignore')
+                
                 if message:
                     print(f"Message de client_{numero_client} :", message)
-                    threading.Thread(target=self.handle_task, args=(message, client, numero_client)).start()
+                    threading.Thread(target=self.handle_task, args=(message, client,)).start()
             except Exception as e:
                 print(f"Client_{numero_client} déconnecté : {e}")
                 client.close()
@@ -65,7 +67,7 @@ class Server:
         except Exception as e:
             print(f"Client_{numero_client} déconnecté : {e}")
 
-    def handle_task(self, task, client, numero_client):
+    def handle_task(self, task, client):
         available_server = None
         for server in self.secondary_servers:
             if server['tasks'] < self.max_taches:
@@ -77,26 +79,18 @@ class Server:
             available_server = self.creation_servsecond(available_server)
 
         # Envoyer la tâche au serveur secondaire disponible
-        while True:
+        
+        try:
+            time.sleep(1)  # Attendre avant d'envoyer la tâche pour s'assurer que le serveur secondaire est prêt
+            self.envoi_tache(task, available_server, client)
+            
+        except Exception as e:
+            print(f"Erreur lors de l'envoi de la tâche au serveur sur le port {available_server['port']} : {e}")
             try:
-                secondary_server = self.envoi_tache(task, available_server, client)
-                break
-            except Exception as e:
-                print(f"Erreur lors de l'envoi de la tâche au serveur sur le port {available_server['port']} : {e}")
-                
                 self.secondary_servers.remove(available_server)
-                available_server = None
-
-                for server in self.secondary_servers:
-                    if server['tasks'] < self.max_taches:
-                        available_server = server
-                    break
-
-                if not available_server:
-                    print("Aucun serveur secondaire disponible pour traiter la tâche.")
-
-                    available_server = self.creation_servsecond(available_server)
-                    break
+            except Exception:
+                pass
+            self.handle_task(task, client)
     
 
 
@@ -121,8 +115,12 @@ class Server:
         print(f"Nouveau serveur secondaire lancé sur le port {new_port}")
         self.secondary_servers.append({'port': new_port, 'tasks': 0, 'process': process})
         available_server = self.secondary_servers[-1]
+
+        
         return available_server
     
+
+
     def envoi_tache(self, task , available_server, client):
         secondary_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         secondary_server.connect(('127.0.0.1', available_server['port']))
