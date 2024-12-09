@@ -80,8 +80,8 @@ class Server:
 
         # Envoyer la tâche au serveur secondaire disponible
         
-        try:
-            time.sleep(1)  # Attendre avant d'envoyer la tâche pour s'assurer que le serveur secondaire est prêt
+        try:  
+            time.sleep(4)  # Attendre avant d'envoyer la tâche pour s'assurer que le serveur secondaire est prêt
             self.envoi_tache(task, available_server, client)
             
         except Exception as e:

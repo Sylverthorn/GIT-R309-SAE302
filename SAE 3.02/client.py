@@ -79,7 +79,7 @@ class Client():
                 '''  arret à partir du terminal
 
                 if message.lower() == "bye":
-                    print("Déconnexion du client...")
+                    print("Déconnexion du client...")  
                     self.client_socket.close()
                     break
 

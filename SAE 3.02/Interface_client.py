@@ -1,6 +1,6 @@
 import sys
 from PyQt6.QtWidgets import *
-from PyQt6.QtGui import QTextCursor
+from PyQt6.QtGui import QTextCursor, QFont
 from client import *
 import threading
 import os
@@ -228,6 +228,8 @@ if __name__ == "__main__":
     else:
         print(f"Le fichier style.qss est introuvable à : {qss_path}")
 
+    # Set a valid font family
+    app.setFont(QFont("Arial", 10))
     window = MainWindow()
     window.show()
     app.exec()

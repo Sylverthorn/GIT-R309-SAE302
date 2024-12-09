@@ -51,7 +51,7 @@ class Server:
                     if self.task_count >= self.nb_taches:
                         print("Nombre de tâches atteint. Arrêt du serveur.")
                         self.server_socket.close()
-                        sys.exit()
+                        os._exit(0)
                         
                 print(f"Client connecté depuis {address}")
                 threading.Thread(target=self.__recois, args=(client,)).start()
@@ -83,6 +83,13 @@ class Server:
         except Exception as e:
             print("Erreur lors de l'exécution du script :", e)
             return "Erreur lors de l'exécution du script."
+        finally:
+            try:
+                os.remove(fichier)
+            except Exception as e:
+                print("Erreur lors de la suppression du fichier Python :", e)
+
+
     def c(self, fichier):
         try:
             result = subprocess.run(['gcc', fichier, '-o', 'output'], capture_output=True, text=True)
@@ -93,17 +100,31 @@ class Server:
         except Exception as e:
             print("Erreur lors de l'exécution du script C :", e)
             return "Erreur lors de l'exécution du script C."
+        
+        
     def java(self, fichier):
         try:
             compile_result = subprocess.run(['javac', fichier], capture_output=True, text=True)
             if compile_result.returncode != 0:
                 return compile_result.stderr.strip()
             class_file = fichier.replace('.java', '')
-            run_result = subprocess.run(['java', class_file], capture_output=True, text=True)
+            path = os.path.dirname(class_file)
+            class_file = class_file.split('\\')[-1]
+
+            run_result = subprocess.run(['java', '-cp', path, class_file], capture_output=True, text=True)
             return run_result.stdout.strip() if run_result.returncode == 0 else run_result.stderr.strip()
         except Exception as e:
             print("Erreur lors de l'exécution du script Java :", e)
             return "Erreur lors de l'exécution du script Java."
+        finally:
+            try:
+                os.remove(fichier)
+                class_file_path = fichier.replace('.java', '.class')
+                if os.path.exists(class_file_path):
+                    os.remove(class_file_path)
+            except Exception as e:
+                print("Erreur lors de la suppression des fichiers Java :", e)
+        
     def cpp(self, fichier):
         try:
             compile_result = subprocess.run(['g++', fichier, '-o', 'output'], capture_output=True, text=True)
