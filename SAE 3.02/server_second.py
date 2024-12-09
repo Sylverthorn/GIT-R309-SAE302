@@ -64,7 +64,12 @@ class Server:
         try:
             fichier, contenu = message.split('|')
             nom_fichier = fichier.split('/')[-1]
-            chemin_fichier = f"SAE 3.02\\fichiers à executer\\{nom_fichier}"
+            
+            if os.name == 'nt':  # For Windows
+                chemin_fichier = f"SAE 3.02\\fichiers à executer\\{fichier}"
+            else:  # For Linux/Unix
+                chemin_fichier = f"SAE 3.02/fichiers à executer/{fichier}"
+                
             with open(chemin_fichier, 'w', encoding='utf-8') as file:
                 file.write(contenu)
 
@@ -137,7 +142,12 @@ class Server:
             return "Erreur lors de l'exécution du script C++."
 
     def execute_script(self, fichier):
-        chemin_fichier = f"SAE 3.02\\fichiers à executer\\{fichier}"
+
+        if os.name == 'nt':  # For Windows
+            chemin_fichier = f"SAE 3.02\\fichiers à executer\\{fichier}"
+        else:
+            chemin_fichier = f"SAE 3.02/fichiers à executer/{fichier}"
+
         if fichier.endswith('.py'):
             return self.python(chemin_fichier)
         elif fichier.endswith('.c'):
