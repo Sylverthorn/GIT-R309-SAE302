@@ -54,9 +54,7 @@ class MainWindow(QMainWindow):
         main_layout.addLayout(grid_left)
         main_layout.addLayout(grid_right)
 
-        self.addr = self.Serveur.text()
-        self.por = self.Port.text()
-        self.client = Client(int(self.por) , self.addr) 
+        
 
         
         threading.Thread(target=self.state).start()
@@ -112,6 +110,9 @@ class MainWindow(QMainWindow):
 
 
     def thread_demarrage(self):
+        self.addr = self.Serveur.text()
+        self.por = self.Port.text()
+        self.client = Client(int(self.por) , self.addr) 
         thread = threading.Thread(target=self.demarrage)
         thread.start()
 
