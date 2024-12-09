@@ -110,7 +110,7 @@ class Server:
 
             
         except Exception as e:
-                print(f"Erreur lors du lancement du serveur secondaire : {e}")
+            print(f"Erreur lors du lancement du serveur secondaire : {e}")
 
         print(f"Nouveau serveur secondaire lancé sur le port {new_port}")
         self.secondary_servers.append({'port': new_port, 'tasks': 0, 'process': process})
