@@ -63,12 +63,12 @@ class Server:
     def fichier(self, client, message):
         try:
             fichier, contenu = message.split('|')
-            nom_fichier = fichier.split('/')[-1]
+            
             
             if os.name == 'nt':  # For Windows
                 chemin_fichier = f"SAE 3.02\\fichiers à executer\\{fichier}"
             else:  # For Linux/Unix
-                chemin_fichier = f"SAE 3.02/fichiers à executer/{fichier}"
+                chemin_fichier = f"fichiers à executer/{fichier}"
                 
             with open(chemin_fichier, 'w', encoding='utf-8') as file:
                 file.write(contenu)
@@ -77,13 +77,17 @@ class Server:
             print("Erreur lors de l'enregistrement du fichier :", e)
             self.__envoi_message("Erreur lors de l'enregistrement du fichier.", client)
 
-        return nom_fichier
+        return fichier
     
 
     
     def python(self, fichier):
         try:
-            result = subprocess.run(['python', fichier], capture_output=True, text=True)
+            if os.name == 'nt':  # For Windows
+                result = subprocess.run(['python', fichier], capture_output=True, text=True)
+            else:
+                result = subprocess.run(['python', fichier], capture_output=True, text=True)
+
             return result.stdout.strip() if result.returncode == 0 else result.stderr.strip()
         except Exception as e:
             print("Erreur lors de l'exécution du script :", e)
@@ -114,7 +118,7 @@ class Server:
                 return compile_result.stderr.strip()
             class_file = fichier.replace('.java', '')
             path = os.path.dirname(class_file)
-            class_file = class_file.split('\\')[-1]
+            class_file = class_file.split('\\')[-1] if os.name == 'nt' else class_file.split('/')[-1]
 
             run_result = subprocess.run(['java', '-cp', path, class_file], capture_output=True, text=True)
             return run_result.stdout.strip() if run_result.returncode == 0 else run_result.stderr.strip()
@@ -146,7 +150,7 @@ class Server:
         if os.name == 'nt':  # For Windows
             chemin_fichier = f"SAE 3.02\\fichiers à executer\\{fichier}"
         else:
-            chemin_fichier = f"SAE 3.02/fichiers à executer/{fichier}"
+            chemin_fichier = f"fichiers à executer/{fichier}"
 
         if fichier.endswith('.py'):
             return self.python(chemin_fichier)

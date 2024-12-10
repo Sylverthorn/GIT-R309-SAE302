@@ -4,7 +4,7 @@ import time
 import os
 
 class Client():
-    def __init__(self, port, host='127.0.0.1'):
+    def __init__(self, port='2300', host='127.0.0.1'):
         self.port = port
         self.host = host
         self.client_socket = socket.socket()

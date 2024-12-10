@@ -104,8 +104,8 @@ class Server:
             if platform.system() == "Windows":
                 process = subprocess.Popen(["start", "cmd", "/k", "python", server_second_path, str(new_port), str(self.max_taches)], shell=True)
             elif platform.system() == "Linux":
-                process = subprocess.Popen(["gnome-terminal", "--", "python3", server_second_path, str(new_port), str(self.max_taches)])
-                print("Lancement dans un nouveau terminal non pris en charge sur ce système.")
+                process = subprocess.Popen(["gnome-terminal", "--", "python3", 'server_second.py', str(new_port), str(self.max_taches)])
+                
 
 
             

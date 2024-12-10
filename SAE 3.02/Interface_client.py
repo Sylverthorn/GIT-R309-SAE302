@@ -9,7 +9,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.nom_fichier = None
-        
+        self.client = Client() 
 
         self.setWindowTitle("CLient")
         self.setGeometry(200, 200, 800, 400)
@@ -101,7 +101,8 @@ class MainWindow(QMainWindow):
                 file.write(self.text.toPlainText())
         message = self.text.toPlainText()
         if self.nom_fichier:
-            self.client.envoi(self.nom_fichier + "|" + message)
+            fichier = self.nom_fichier.split('/')[-1]
+            self.client.envoi(fichier + "|" + message)
         else:
             self.client.envoi(message)
 
@@ -112,7 +113,8 @@ class MainWindow(QMainWindow):
     def thread_demarrage(self):
         self.addr = self.Serveur.text()
         self.por = self.Port.text()
-        self.client = Client(int(self.por) , self.addr) 
+        self.client.host = self.addr
+        self.client.port = int(self.por)
         thread = threading.Thread(target=self.demarrage)
         thread.start()
 
@@ -180,14 +182,15 @@ class MainWindow(QMainWindow):
         sys.stdout.write = write_to_text_edit
 
     def resultat(self):
-        while True:
-            if self.client.resultat:
-                self.resutat.append(self.client.resultat)
-                
-                self.resutat.ensureCursorVisible()
-                self.client.resultat = None
-                
-
+        try:
+            while True:
+                if self.client.resultat:
+                    self.resutat.append(self.client.resultat)
+                    
+                    self.resutat.ensureCursorVisible()
+                    self.client.resultat = None
+        except Exception:            
+            pass
 
     def closeEvent(self, event):
         self.client.quitter()
