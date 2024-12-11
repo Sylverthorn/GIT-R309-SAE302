@@ -13,7 +13,9 @@ class Server:
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.secondary_servers = []  # Liste des serveurs secondaires en cours
-        self.max_taches = 5  # Nombre max de tâches par serveur secondaire
+        self.max_taches = 2  # Nombre max de tâches par serveur secondaire
+        self.initialisation_serveur_secondaire()
+
 
     def __connect(self):
         self.server_socket.bind((self.hosts, self.port))
@@ -67,34 +69,65 @@ class Server:
         except Exception as e:
             print(f"Client_{numero_client} déconnecté : {e}")
 
+    def initialisation_serveur_secondaire(self):
+        for i in range(2):
+            self.creation_servsecond()
+
+    def est_disponible(self, server):
+        try:
+            secondary_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            secondary_server.settimeout(1)  # Timeout de 1 seconde
+            secondary_server.connect(('127.0.0.1', server['port']))
+            secondary_server.send(b'ping')
+            response = secondary_server.recv(1024)
+            secondary_server.close()
+            return True if response.decode() == 'pong' else False
+        except Exception:
+            return False
+
     def handle_task(self, task, client):
         available_server = None
+        
         for server in self.secondary_servers:
-            if server['tasks'] < self.max_taches:
-                available_server = server
-                break
+            if server["état"] == "disponible":
+                if self.est_disponible(server):
+                    available_server = server
+                    print(f"debug 0 {available_server}")
+                    break
+                else:
+                    server["état"] = "indisponible"
 
         if not available_server:
-            # Si aucun serveur disponible, lancer un nouveau serveur secondaire
-            available_server = self.creation_servsecond(available_server)
+            for server in self.secondary_servers:
+                if server["état"] == "indisponible":
+                    if self.est_disponible(server):
+                        available_server = server
+                        server["état"] = "disponible"
+                        break
+        if not available_server:
+                        # Si aucun serveur disponible, lancer un nouveau serveur secondaire
+                        
+            print("debug 1")
+            available_server = self.creation_servsecond()
 
         # Envoyer la tâche au serveur secondaire disponible
-        
         try:  
-            time.sleep(4)  # Attendre avant d'envoyer la tâche pour s'assurer que le serveur secondaire est prêt
-            self.envoi_tache(task, available_server, client)
+            if self.est_disponible(available_server): # Attendre avant d'envoyer la tâche pour s'assurer que le serveur secondaire est prêt
+                print (f"debug 2 {available_server}")
+                self.envoi_tache(task, available_server, client)
+                return
+            else:
+                time.sleep(2)
+                self.envoi_tache(task, available_server, client)
+                return
             
         except Exception as e:
-            print(f"Erreur lors de l'envoi de la tâche au serveur sur le port {available_server['port']} : {e}")
-            try:
-                self.secondary_servers.remove(available_server)
-            except Exception:
-                pass
+            print(f"Erreur lors de l'envoi de la tâche au serveur {e}")
             self.handle_task(task, client)
     
 
 
-    def creation_servsecond(self, available_server):
+    def creation_servsecond(self):
         new_port = random.randint(5000, 6000)
             
         server_second_path = "SAE 3.02\\server_second.py"
@@ -107,17 +140,20 @@ class Server:
                 process = subprocess.Popen(["gnome-terminal", "--", "python3", 'server_second.py', str(new_port), str(self.max_taches)])
                 
 
-
+            état = "disponible"
             
         except Exception as e:
             print(f"Erreur lors du lancement du serveur secondaire : {e}")
 
         print(f"Nouveau serveur secondaire lancé sur le port {new_port}")
-        self.secondary_servers.append({'port': new_port, 'tasks': 0, 'process': process})
-        available_server = self.secondary_servers[-1]
+        new_server = {'port': new_port, "état": état, 'process': process}
+        self.secondary_servers.append(new_server)
+
+        return new_server
+        
 
         
-        return available_server
+        
     
 
 
@@ -129,7 +165,8 @@ class Server:
         response = secondary_server.recv(1024).decode()
         self.__envoi_message(response, client)
         
-        available_server['tasks'] += 1
+        
+        
         print(f"Tâche déléguée au serveur secondaire sur le port {available_server['port']}")
         return secondary_server
 

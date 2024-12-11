@@ -3,6 +3,7 @@ import sys
 import socket
 import threading
 import subprocess
+import random
 
 class Server:
     def __init__(self, port, nb_taches, hosts='0.0.0.0'):
@@ -13,6 +14,7 @@ class Server:
         self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.task_count = 0
         self.lock = threading.Lock()
+        self.condition = threading.Condition(self.lock)
 
     def __connect(self):
         self.server_socket.bind((self.hosts, self.port))
@@ -26,44 +28,61 @@ class Server:
             print(e)
 
     def __recois(self, client):
-        while True:
-            try:
+        try:
+            while True:
                 message = client.recv(10000).decode()
+
                 if message:
-                    print(f"Message reçu : {message}")
-                    fichier = self.fichier(client, message)
-                    resultat = self.execute_script(fichier)
-                    # Réponse au client
-                    réponse = f"""resultat|┌──(root㉿)-[resultat] 
+                    if message == 'ping':
+                        if self.task_count < self.nb_taches:
+                            self.__envoi_message('pong', client)
+                        else:
+                            pass
+                        
+                    if message != 'ping':
+                        if self.task_count < self.nb_taches:
+                            self.task_count += 1
+                            print(f"\n[Script reçu] \n{message}")
+                            fichier = self.fichier(client, message)
+                            resultat = self.execute_script(fichier)
+                            print('\n!! Execution terminer !!')
+                            self.task_count -= 1
+                            # Réponse au client
+                            réponse = f"""resultat|┌──(root㉿)-[resultat] 
 └─# {resultat}"""
-                    self.__envoi_message(réponse, client)
-            except Exception as e:
-                print("Client déconnecté :", e)
-                client.close()
-                break
+                            self.__envoi_message(réponse, client)
+
+                        else:
+                            print("Tâches saturées, veuillez patienter.")
+                            pass
+                    
+
+        except Exception as e:
+            print("Client déconnecté :", e)
+            
 
     def accept(self):
         while True:
+            with self.condition:
+                while self.task_count >= self.nb_taches:
+                    self.condition.wait()
             try:
                 client, address = self.server_socket.accept()
-                with self.lock:
-                    self.task_count += 1
-                    if self.task_count >= self.nb_taches:
-                        print("Nombre de tâches atteint. Arrêt du serveur.")
-                        self.server_socket.close()
-                        os._exit(0)
-                        
-                print(f"Client connecté depuis {address}")
+                
                 threading.Thread(target=self.__recois, args=(client,)).start()
             except Exception as e:
                 print("Erreur serveur secondaire :", e)
                 break
-    
 
     def fichier(self, client, message):
         try:
             fichier, contenu = message.split('|')
-            
+            nom, extension = fichier.split('.')
+            if extension == 'java':
+                pass
+            else:
+                rand = random.randint(1, 1000)
+                fichier = f"{nom}_{rand}.{extension}"
             
             if os.name == 'nt':  # For Windows
                 chemin_fichier = f"SAE 3.02\\fichiers à executer\\{fichier}"
@@ -78,15 +97,13 @@ class Server:
             self.__envoi_message("Erreur lors de l'enregistrement du fichier.", client)
 
         return fichier
-    
 
-    
     def python(self, fichier):
         try:
             if os.name == 'nt':  # For Windows
                 result = subprocess.run(['python', fichier], capture_output=True, text=True)
             else:
-                result = subprocess.run(['python', fichier], capture_output=True, text=True)
+                result = subprocess.run(['python3', fichier], capture_output=True, text=True)
 
             return result.stdout.strip() if result.returncode == 0 else result.stderr.strip()
         except Exception as e:
@@ -98,7 +115,6 @@ class Server:
             except Exception as e:
                 print("Erreur lors de la suppression du fichier Python :", e)
 
-
     def c(self, fichier):
         try:
             result = subprocess.run(['gcc', fichier, '-o', 'output'], capture_output=True, text=True)
@@ -109,8 +125,7 @@ class Server:
         except Exception as e:
             print("Erreur lors de l'exécution du script C :", e)
             return "Erreur lors de l'exécution du script C."
-        
-        
+
     def java(self, fichier):
         try:
             compile_result = subprocess.run(['javac', fichier], capture_output=True, text=True)
@@ -133,7 +148,7 @@ class Server:
                     os.remove(class_file_path)
             except Exception as e:
                 print("Erreur lors de la suppression des fichiers Java :", e)
-        
+
     def cpp(self, fichier):
         try:
             compile_result = subprocess.run(['g++', fichier, '-o', 'output'], capture_output=True, text=True)
@@ -146,7 +161,6 @@ class Server:
             return "Erreur lors de l'exécution du script C++."
 
     def execute_script(self, fichier):
-
         if os.name == 'nt':  # For Windows
             chemin_fichier = f"SAE 3.02\\fichiers à executer\\{fichier}"
         else:
@@ -162,13 +176,10 @@ class Server:
             return self.cpp(chemin_fichier)
         else:
             return "Type de fichier non supporté."
-            
-    
 
     def start(self):
         self.__connect()
         self.accept()
-
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
