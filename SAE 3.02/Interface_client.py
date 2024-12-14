@@ -58,7 +58,7 @@ class MainWindow(QMainWindow):
 
         
         threading.Thread(target=self.state).start()
-        threading.Thread(target=self.redirect_stdout).start()
+        #threading.Thread(target=self.redirect_stdout).start()
         threading.Thread(target=self.resultat).start()
 
         self.bouton.clicked.connect(self.thread_demarrage)
@@ -102,7 +102,7 @@ class MainWindow(QMainWindow):
         message = self.text.toPlainText()
         if self.nom_fichier:
             fichier = self.nom_fichier.split('/')[-1]
-            self.client.envoi(fichier + "|" + message)
+            self.client.envoi("script|" + fichier + "|" + message)
         else:
             self.client.envoi(message)
 

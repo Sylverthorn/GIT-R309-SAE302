@@ -109,7 +109,7 @@ class Client():
             if self.state == "shutdown":
                 break
             try:
-                reply = self.client_socket.recv(1024).decode()
+                reply = self.client_socket.recv(10000).decode()
                 if reply:
                     
                     parts = reply.split("|")

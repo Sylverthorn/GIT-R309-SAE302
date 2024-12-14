@@ -4,49 +4,72 @@ import socket
 import threading
 import subprocess
 import random
+import time
 
 class Server:
-    def __init__(self, port, nb_taches, hosts='0.0.0.0'):
-        self.port = port
-        self.nb_taches = nb_taches
-        self.hosts = hosts
+    def __init__(self, master_host, master_port, nb_taches):
+        self.master_host = master_host
+        self.master_port = master_port
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+        self.nb_taches = nb_taches
         self.task_count = 0
         self.lock = threading.Lock()
         self.condition = threading.Condition(self.lock)
 
     def __connect(self):
-        self.server_socket.bind((self.hosts, self.port))
-        self.server_socket.listen(1)
-        print("Server Secondaire connecté sur le port: " + str(self.port))
+            print(f"Serveur secondaire démarré")
+            self.register_to_master()
+            time.sleep(2)
+            threading.Thread(target=self.__recois).start()
+            self.server_socket.send('hello'.encode())
+    def register_to_master(self):
+        while True:
+            essai = 0
+            try:
+                    self.server_socket.connect((self.master_host, self.master_port))
+                    print(f"Enregistré auprès du serveur maître {self.master_host}:{self.master_port}")
+                    break
+            except Exception as e:
+                if essai == 5:
+                    print(f"Impossible de se connecter au serveur maître : {e}. Arrêt du serveur secondaire.")
+                    self.server_socket.close()
+                    sys.exit(1)
 
-    def __envoi_message(self, message, client=None):
+                print(f"Impossible de se connecter au serveur maître : {e}. Nouvel essai dans 5 secondes.")
+                time.sleep(5)
+                essai += 1
+
+
+    def __envoi_message(self, message):
         try:
-            client.send(message.encode())
+            self.server_socket.send(message.encode())
         except Exception as e:
             print(e)
 
-    def __recois(self, client):
-        try:
+    def __recois(self):
             while True:
-                message = client.recv(10000).decode()
+                try:
+                    message = self.server_socket.recv(10000).decode()
+                except ConnectionResetError as e:
+                    print(f"Connection reset by peer: {e}")
+                    break
 
                 if message:
                     if message == 'ping':
                         with self.lock:
                             if self.task_count < self.nb_taches:
-                                self.__envoi_message('pong', client)
+                                self.__envoi_message('pong')
                             else:
-                                self.__envoi_message('saturé', client)
-                    else:
+                                self.__envoi_message('saturé')
+                    
+                    elif message.startswith('script|'):
                         if self.task_count < self.nb_taches:
                             self.task_count += 1
                             print(f"\n[Script reçu] \n{message}")
-                            fichier = self.fichier(client, message)
-                            resultat = threading.Thread(target=self.execute_script, args=(fichier,))
-                            resultat.start()
-                            resultat.join()
+                            fichier = self.fichier(message)
+                            resultat = self.execute_script(fichier)
                             print('\n!! Execution terminer !!')
                             self.task_count -= 1
                             with self.lock:
@@ -54,30 +77,18 @@ class Server:
                             # Réponse au client
                             réponse = f"""resultat|┌──(root㉿)-[resultat] 
 └─# {resultat}"""
-                            self.__envoi_message(réponse, client)
+                            self.__envoi_message(réponse)
                         else:
                             print("Tâches saturées, veuillez patienter.")
-                            self.__envoi_message("Tâches saturées, veuillez patienter.", client)
+                            self.__envoi_message("Tâches saturées, veuillez patienter.")
+                    else:
+                        print(f"Message du serveur maître : {message}")
 
-        except Exception as e:
-            print("Client déconnecté :", e)
 
-    def accept(self):
-        while True:
-            try:
-                client, address = self.server_socket.accept()
-                
-                if self.task_count >= self.nb_taches:
-                    pass
-                else: 
-                    threading.Thread(target=self.__recois, args=(client,)).start()
-            except Exception as e:
-                print("Erreur serveur secondaire :", e)
-                break
-
-    def fichier(self, client, message):
+    def fichier(self, message):
         try:
-            fichier, contenu = message.split('|')
+            script, fichier, contenu = message.split('|')
+            print(f"Nom du fichier : {fichier}")
             nom, extension = fichier.split('.')
             if extension == 'java':
                 pass
@@ -95,7 +106,7 @@ class Server:
 
         except Exception as e:
             print("Erreur lors de l'enregistrement du fichier :", e)
-            self.__envoi_message("Erreur lors de l'enregistrement du fichier.", client)
+            self.__envoi_message("Erreur lors de l'enregistrement du fichier.")
 
         return fichier
 
@@ -180,14 +191,16 @@ class Server:
 
     def start(self):
         self.__connect()
-        self.accept()
+        
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print("Usage : python server_second.py <port> <nb_taches>")
+    if len(sys.argv) != 4:
+        print("Usage : python server_second.py <master_host> <master_port> <nb_taches>")
         sys.exit(1)
 
-    port = int(sys.argv[1])
-    nb_taches = int(sys.argv[2])
-    server = Server(port, nb_taches)
+    serveur_maitre = sys.argv[1]
+    port_maitre = int(sys.argv[2])
+    nb_taches = int(sys.argv[3])
+    print(f"{serveur_maitre} {port_maitre} {nb_taches}")
+    server = Server(serveur_maitre, port_maitre, nb_taches)
     server.start()
