@@ -151,7 +151,7 @@ class Client():
             self.client_socket.close()
             print("Arret du client ...")
             
-        except Exception as e:
+        except Exception:
             time.sleep(1.5)
             print("Arret du client ...")
             self.state = "shutdown"

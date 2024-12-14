@@ -76,7 +76,6 @@ class Server:
     def est_disponible(self, server):
         try:
             secondary_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            secondary_server.settimeout(1)  # Timeout de 1 seconde
             secondary_server.connect(('127.0.0.1', server['port']))
             secondary_server.send(b'ping')
             response = secondary_server.recv(1024)
@@ -89,6 +88,7 @@ class Server:
         available_server = None
         
         for server in self.secondary_servers:
+            print(f"debug 93 {server}")
             if server["état"] == "disponible":
                 if self.est_disponible(server):
                     available_server = server
@@ -104,27 +104,16 @@ class Server:
                         available_server = server
                         server["état"] = "disponible"
                         break
-        if not available_server:
-                        # Si aucun serveur disponible, lancer un nouveau serveur secondaire
-                        
-            print("debug 1")
-            available_server = self.creation_servsecond()
-
         # Envoyer la tâche au serveur secondaire disponible
-        try:  
-            if self.est_disponible(available_server): # Attendre avant d'envoyer la tâche pour s'assurer que le serveur secondaire est prêt
-                print (f"debug 2 {available_server}")
-                self.envoi_tache(task, available_server, client)
-                return
-            else:
-                time.sleep(2)
-                self.envoi_tache(task, available_server, client)
-                return
+        if available_server and self.est_disponible(available_server): # Attendre avant d'envoyer la tâche pour s'assurer que le serveur secondaire est prêt
+            print (f"debug 2 {available_server}")
+            self.envoi_tache(task, available_server, client)
+            return
+        else:
+            print("Aucun serveur secondaire disponible pour traiter la tâche.")
+            self.__envoi_message("Aucun serveur secondaire disponible pour traiter la tâche.", client)
+            return
             
-        except Exception as e:
-            print(f"Erreur lors de l'envoi de la tâche au serveur {e}")
-            self.handle_task(task, client)
-    
 
 
     def creation_servsecond(self):

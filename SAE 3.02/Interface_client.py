@@ -233,7 +233,7 @@ if __name__ == "__main__":
         print(f"Le fichier style.qss est introuvable à : {qss_path}")
 
     # Set a valid font family
-    app.setFont(QFont("Arial", 10))
+    app.setFont(QFont("Sans Serif", 10))
     window = MainWindow()
     window.show()
     app.exec()

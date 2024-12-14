@@ -34,42 +34,43 @@ class Server:
 
                 if message:
                     if message == 'ping':
-                        if self.task_count < self.nb_taches:
-                            self.__envoi_message('pong', client)
-                        else:
-                            pass
-                        
-                    if message != 'ping':
+                        with self.lock:
+                            if self.task_count < self.nb_taches:
+                                self.__envoi_message('pong', client)
+                            else:
+                                self.__envoi_message('saturé', client)
+                    else:
                         if self.task_count < self.nb_taches:
                             self.task_count += 1
                             print(f"\n[Script reçu] \n{message}")
                             fichier = self.fichier(client, message)
-                            resultat = self.execute_script(fichier)
+                            resultat = threading.Thread(target=self.execute_script, args=(fichier,))
+                            resultat.start()
+                            resultat.join()
                             print('\n!! Execution terminer !!')
                             self.task_count -= 1
+                            with self.lock:
+                                self.condition.notify_all()
                             # Réponse au client
                             réponse = f"""resultat|┌──(root㉿)-[resultat] 
 └─# {resultat}"""
                             self.__envoi_message(réponse, client)
-
                         else:
                             print("Tâches saturées, veuillez patienter.")
-                            pass
-                    
+                            self.__envoi_message("Tâches saturées, veuillez patienter.", client)
 
         except Exception as e:
             print("Client déconnecté :", e)
-            
 
     def accept(self):
         while True:
-            with self.condition:
-                while self.task_count >= self.nb_taches:
-                    self.condition.wait()
             try:
                 client, address = self.server_socket.accept()
                 
-                threading.Thread(target=self.__recois, args=(client,)).start()
+                if self.task_count >= self.nb_taches:
+                    pass
+                else: 
+                    threading.Thread(target=self.__recois, args=(client,)).start()
             except Exception as e:
                 print("Erreur serveur secondaire :", e)
                 break
@@ -83,12 +84,12 @@ class Server:
             else:
                 rand = random.randint(1, 1000)
                 fichier = f"{nom}_{rand}.{extension}"
-            
+
             if os.name == 'nt':  # For Windows
                 chemin_fichier = f"SAE 3.02\\fichiers à executer\\{fichier}"
             else:  # For Linux/Unix
                 chemin_fichier = f"fichiers à executer/{fichier}"
-                
+
             with open(chemin_fichier, 'w', encoding='utf-8') as file:
                 file.write(contenu)
 
