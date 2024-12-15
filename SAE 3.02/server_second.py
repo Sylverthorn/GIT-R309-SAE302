@@ -14,16 +14,17 @@ class Server:
         self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
         self.nb_taches = nb_taches
-        self.task_count = 0
-        self.lock = threading.Lock()
-        self.condition = threading.Condition(self.lock)
+
+        self.file_attente = []
 
     def __connect(self):
             print(f"Serveur secondaire démarré")
             self.register_to_master()
             time.sleep(2)
             threading.Thread(target=self.__recois).start()
-            self.server_socket.send('hello'.encode())
+            
+            threading.Thread(target=self.file_execution).start()
+
     def register_to_master(self):
         while True:
             essai = 0
@@ -47,48 +48,61 @@ class Server:
             self.server_socket.send(message.encode())
         except Exception as e:
             print(e)
+    
 
     def __recois(self):
-            while True:
-                try:
-                    message = self.server_socket.recv(10000).decode()
-                except ConnectionResetError as e:
-                    print(f"Connection reset by peer: {e}")
-                    break
+        while True:
+            try:
+                message = self.server_socket.recv(10000).decode()
+            except ConnectionResetError as e:
+                print(f"Connection reset by peer: {e}")
+                break
 
-                if message:
-                    if message == 'ping':
-                        with self.lock:
-                            if self.task_count < self.nb_taches:
-                                self.__envoi_message('pong')
-                            else:
-                                self.__envoi_message('saturé')
-                    
-                    elif message.startswith('script|'):
-                        if self.task_count < self.nb_taches:
-                            self.task_count += 1
-                            print(f"\n[Script reçu] \n{message}")
-                            fichier = self.fichier(message)
-                            resultat = self.execute_script(fichier)
-                            print('\n!! Execution terminer !!')
-                            self.task_count -= 1
-                            with self.lock:
-                                self.condition.notify_all()
-                            # Réponse au client
-                            réponse = f"""resultat|┌──(root㉿)-[resultat] 
-└─# {resultat}"""
-                            self.__envoi_message(réponse)
-                        else:
-                            print("Tâches saturées, veuillez patienter.")
-                            self.__envoi_message("Tâches saturées, veuillez patienter.")
+            if message:
+                
+                if message == 'ping':
+                    if len(self.file_attente) >= self.nb_taches:
+                        self.__envoi_message('pang')
+                        print("pang")
                     else:
-                        print(f"Message du serveur maître : {message}")
+                        self.__envoi_message('pong')
+                        
+
+                elif message.startswith('script|'):
+                    if len(self.file_attente) < self.nb_taches:
+                        self.file_attente.append(message)
+
+                        print(f"\n[Script reçu] ")
+                        print("[+] ajouté à la file d'attente")
+                        print(f"[?] Nombre de tâches en attente : {len(self.file_attente)}")
+                        print(self.file_attente)
+
+                    else:
+                        print("Tâches saturées, veuillez patienter.")
+                        self.__envoi_message("Tâches saturées, veuillez patienter.")
+
+
+    def file_execution(self):
+        while True:
+            if len(self.file_attente) > 0:
+                for message in self.file_attente:
+                    fichier = self.fichier(message)
+                    resultat = self.execute_script(fichier)
+                    print('\n!! Execution terminé !!')
+                    self.file_attente.remove(message)
+                    print(f"[?] Nombre de tâches en attente : {len(self.file_attente)}")
+                    
+                    # Réponse au client
+                    réponse = f"""resultat|┌──(root㉿)-[resultat] 
+└─# {resultat}"""
+                    self.__envoi_message(réponse)
+                    
+            time.sleep(1)  # Petite pause pour permettre aux autres messages de passer
 
 
     def fichier(self, message):
         try:
             script, fichier, contenu = message.split('|')
-            print(f"Nom du fichier : {fichier}")
             nom, extension = fichier.split('.')
             if extension == 'java':
                 pass
@@ -137,6 +151,13 @@ class Server:
         except Exception as e:
             print("Erreur lors de l'exécution du script C :", e)
             return "Erreur lors de l'exécution du script C."
+        finally:
+            try:
+                os.remove(fichier)
+                if os.path.exists('output'):
+                    os.remove('output')
+            except Exception as e:
+                print("Erreur lors de la suppression des fichiers C :", e)
 
     def java(self, fichier):
         try:
@@ -171,6 +192,13 @@ class Server:
         except Exception as e:
             print("Erreur lors de l'exécution du script C++ :", e)
             return "Erreur lors de l'exécution du script C++."
+        finally:
+            try:
+                os.remove(fichier)
+                if os.path.exists('output'):
+                    os.remove('output')
+            except Exception as e:
+                print("Erreur lors de la suppression des fichiers C++ :", e)
 
     def execute_script(self, fichier):
         if os.name == 'nt':  # For Windows

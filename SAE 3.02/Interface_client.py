@@ -58,7 +58,7 @@ class MainWindow(QMainWindow):
 
         
         threading.Thread(target=self.state).start()
-        #threading.Thread(target=self.redirect_stdout).start()
+        threading.Thread(target=self.redirect_stdout).start()
         threading.Thread(target=self.resultat).start()
 
         self.bouton.clicked.connect(self.thread_demarrage)

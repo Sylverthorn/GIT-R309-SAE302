@@ -101,34 +101,38 @@ class Server:
             server_second = server["socket"]
             server_second.send(b'ping')
             response = server_second.recv(1024)
-            print(response)
-            
+
             if response == b'pong':
                 server["état"] = "disponible"
-            elif response == 'saturé':
-                server["état"] = "indisponible"
+            elif response == b'pang':  # Si le serveur est saturé
+                server["état"] = "saturé"
+            else:
+                server["état"] = "indisponible"  # Par défaut si la réponse est inattendue
         except Exception:
-            server["état"] = "indisponible"
+            server["état"] = "indisponible"  # Si erreur de connexion, le serveur est considéré indisponible
+    def __dispo(self):
+        while True:
+            for server in self.secondary_servers:
+                self.est_disponible(server)
+            
 
     def handle_task(self, task, client):
         available_server = None
-        for server in self.secondary_servers:
-            self.est_disponible(server)
 
-        print(self.secondary_servers)
+        # Vérifier tous les serveurs secondaires
         for server in self.secondary_servers:
             if server["état"] == "disponible":
-                    available_server = server
-                    break
+                available_server = server
+                break
             
-        # Envoyer la tâche au serveur secondaire disponible
-        if available_server: # Attendre avant d'envoyer la tâche pour s'assurer que le serveur secondaire est prêt
-            self.envoi_tache(task,available_server["id"], available_server["socket"], client)
-            return
+
+        if available_server:
+            print('\n[+] Serveur secondaire disponible trouvé')
+            self.envoi_tache(task, available_server["id"], available_server["socket"], client)
         else:
-            print("Aucun serveur secondaire disponible pour traiter la tâche.")
+            print("[*] Aucun serveur secondaire disponible pour traiter la tâche.")
             self.__envoi_message("Aucun serveur secondaire disponible pour traiter la tâche.", client)
-            return
+
             
 
 
@@ -153,12 +157,15 @@ class Server:
 
 
 
-    def envoi_tache(self, task,numero_serv , available_server_socket, client):
-        print(f"debug 1 {available_server_socket}")
+    def envoi_tache(self, task, numero_serv, available_server_socket, client):
         available_server_socket.sendall(task.encode('utf-8'))
         print(f"Tâche déléguée au serveur secondaire {numero_serv}")
-        
+        time.sleep(1)
         response = available_server_socket.recv(10000).decode()
+        if response == 'pong' or response == 'pang':
+            response = available_server_socket.recv(10000).decode()
+        print(f"Réponse du serveur secondaire {numero_serv} : {response}")
+        time.sleep(1)
         self.__envoi_message(response, client)
         
         
@@ -169,7 +176,7 @@ class Server:
         self.start_server_socket(self.hosts, self.port_serv)
         threading.Thread(target=self.accept_client).start()
         threading.Thread(target=self.accept_server).start()
-
+        threading.Thread(target=self.__dispo).start()
 
 
 if __name__ == "__main__":
