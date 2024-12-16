@@ -118,7 +118,7 @@ class Server:
 
     def handle_task(self, task, client):
         available_server = None
-
+        print(self.secondary_servers)
         # Vérifier tous les serveurs secondaires
         for server in self.secondary_servers:
             if server["état"] == "disponible":
@@ -128,7 +128,7 @@ class Server:
 
         if available_server:
             print('\n[+] Serveur secondaire disponible trouvé')
-            self.envoi_tache(task, available_server["id"], available_server["socket"], client)
+            self.envoi_tache(task, available_server["id"], available_server, client)
         else:
             print("[*] Aucun serveur secondaire disponible pour traiter la tâche.")
             self.__envoi_message("Aucun serveur secondaire disponible pour traiter la tâche.", client)
@@ -157,16 +157,25 @@ class Server:
 
 
 
-    def envoi_tache(self, task, numero_serv, available_server_socket, client):
-        available_server_socket.sendall(task.encode('utf-8'))
+    def envoi_tache(self, task, numero_serv, available_server, client):
+        available_server['socket'].sendall(task.encode('utf-8'))
         print(f"Tâche déléguée au serveur secondaire {numero_serv}")
         time.sleep(1)
-        response = available_server_socket.recv(10000).decode()
-        if response == 'pong' or response == 'pang':
-            response = available_server_socket.recv(10000).decode()
-        print(f"Réponse du serveur secondaire {numero_serv} : {response}")
-        time.sleep(1)
-        self.__envoi_message(response, client)
+        try:
+            response = available_server["socket"].recv(10000).decode()
+        except Exception as e:
+            print(f"\n[!] Erreur lors de la réception de la réponse du serveur secondaire {numero_serv} : {e}")
+            response = 'indisponible'
+
+        if response == 'indisponible':
+            print(f"Serveur secondaire {numero_serv} indisponible.")
+            available_server["état"] = "indisponible"
+            threading.Thread(target=self.handle_task, args=(task, client)).start()
+            return
+        else: 
+            available_server["état"] = "disponible"  
+            print(f"\n[!] Réponse du serveur secondaire {numero_serv} : {response}")
+            self.__envoi_message(response, client)
         
         
         
@@ -176,7 +185,7 @@ class Server:
         self.start_server_socket(self.hosts, self.port_serv)
         threading.Thread(target=self.accept_client).start()
         threading.Thread(target=self.accept_server).start()
-        threading.Thread(target=self.__dispo).start()
+        #threading.Thread(target=self.__dispo).start()
 
 
 if __name__ == "__main__":

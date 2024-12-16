@@ -59,16 +59,7 @@ class Server:
                 break
 
             if message:
-                
-                if message == 'ping':
-                    if len(self.file_attente) >= self.nb_taches:
-                        self.__envoi_message('pang')
-                        print("pang")
-                    else:
-                        self.__envoi_message('pong')
-                        
-
-                elif message.startswith('script|'):
+                if message.startswith('script|'):
                     if len(self.file_attente) < self.nb_taches:
                         self.file_attente.append(message)
 
@@ -79,7 +70,7 @@ class Server:
 
                     else:
                         print("Tâches saturées, veuillez patienter.")
-                        self.__envoi_message("Tâches saturées, veuillez patienter.")
+                        self.__envoi_message("indisponible")
 
 
     def file_execution(self):
@@ -224,7 +215,7 @@ class Server:
 if __name__ == "__main__":
     if len(sys.argv) != 4:
         print("Usage : python server_second.py <master_host> <master_port> <nb_taches>")
-        sys.exit(1)
+        
 
     serveur_maitre = sys.argv[1]
     port_maitre = int(sys.argv[2])
