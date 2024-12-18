@@ -66,7 +66,9 @@ class Server:
             try:
                 message = self.server_socket.recv(10000).decode()
             except ConnectionResetError as e:
-                print(f"Connection reset by peer: {e}")
+                print(f" [!] Connexion perdue avec le serveur maître : {e}")
+                self.server_socket.close()
+                sys.exit(1)
                 break
 
             if message:

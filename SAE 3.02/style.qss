@@ -1,5 +1,5 @@
 /* Style général de la fenêtre */
-QMainWindow {
+QMainWindow, QWidget {
     background-color: #e0e0e0;
     color: #333;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -27,19 +27,27 @@ QLineEdit:focus {
     background-color: #f0f8ff;
 }
 
-/* Style du QTextEdit */
-QTextEdit {
+/* Style des cases à cocher */
+QCheckBox {
+    font-size: 14px;
+    color: #333;
+}
+
+QCheckBox::indicator {
+    width: 16px;
+    height: 16px;
+}
+
+
+
+/* Style des QListWidget */
+QListWidget {
     border: 1px solid #ccc;
     border-radius: 4px;
     padding: 6px;
     background-color: #fff;
     font-size: 14px;
     color: #333;
-}
-
-QTextEdit:focus {
-    border-color: #0078d7;
-    background-color: #f0f8ff;
 }
 
 /* Style des boutons */
@@ -86,4 +94,3 @@ QPushButton#aide:hover {
 QPushButton#aide:pressed {
     background-color: #269abc;
 }
-
