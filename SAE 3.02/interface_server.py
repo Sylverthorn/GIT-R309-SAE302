@@ -43,9 +43,9 @@ class ServerGUI(QWidget):
     def init_config_fields(self, layout):
         fields = [
             ("Port Client", "4200"),
-            ("Port Serveur", "5200"),
-            ("Serveur Local", "True"),
-            ("Nombre Serveurs Secondaires", "2"),
+            ("Port 2nd Serveur", "5200"),
+            ("Serveur 2nd Local", "True"),
+            ("Nombre Serveurs 2nd", "2"),
             ("Adresse IP Maitre", "127.0.0.1"),
             ("Nb Tâches Max", "10"),
             ("CPU Max", "10")
@@ -59,7 +59,7 @@ class ServerGUI(QWidget):
             lbl.setFont(QFont("Arial", 10))
             self.labels[label] = lbl
 
-            if label == "Serveur Local":
+            if label == "Serveur 2nd Local":
                 self.local_toggle = QCheckBox("Activer")
                 self.local_toggle.setChecked(default_value == "True")
                 self.local_toggle.stateChanged.connect(self.toggle_local_mode)
@@ -71,7 +71,7 @@ class ServerGUI(QWidget):
                 h_layout.addWidget(lbl)
                 h_layout.addWidget(field)
 
-                if label in ["Nombre Serveurs Secondaires", "Adresse IP Maitre", "Nb Tâches Max", "CPU Max"]:
+                if label in ["Nombre Serveurs 2nd", "Adresse IP Maitre", "Nb Tâches Max", "CPU Max"]:
                     lbl.setVisible(self.local_toggle.isChecked())
                     field.setVisible(self.local_toggle.isChecked())
 
@@ -79,7 +79,7 @@ class ServerGUI(QWidget):
 
     def toggle_local_mode(self):
         self.local_mode = self.local_toggle.isChecked()
-        for label in ["Nombre Serveurs Secondaires", "Adresse IP Maitre", "Nb Tâches Max", "CPU Max"]:
+        for label in ["Nombre Serveurs 2nd", "Adresse IP Maitre", "Nb Tâches Max", "CPU Max"]:
             self.config_fields[label].setVisible(self.local_mode)
             self.labels[label].setVisible(self.local_mode)
 
@@ -92,9 +92,9 @@ class ServerGUI(QWidget):
     def start_server(self):
         try:
             port_client = int(self.config_fields["Port Client"].text())
-            port_server = int(self.config_fields["Port Serveur"].text())
+            port_server = int(self.config_fields["Port 2nd Serveur"].text())
             local = self.local_toggle.isChecked()
-            nb_servers = int(self.config_fields["Nombre Serveurs Secondaires"].text()) if local else 0
+            nb_servers = int(self.config_fields["Nombre Serveurs 2nd"].text()) if local else 0
             ip_maitre = self.config_fields["Adresse IP Maitre"].text()
             nb_taches_max = int(self.config_fields["Nb Tâches Max"].text()) if local else 0
             cpu_max = int(self.config_fields["CPU Max"].text()) if local else 0

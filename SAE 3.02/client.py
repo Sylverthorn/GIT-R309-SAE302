@@ -25,6 +25,7 @@ class Client():
             
 
 
+
         except ConnectionRefusedError:
             
                 print("Connexion refusée. Le serveur ne fonctionne pas.")

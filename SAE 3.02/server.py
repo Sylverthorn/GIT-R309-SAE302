@@ -148,7 +148,7 @@ class Server:
     def creation_servsecond(self):
         
             
-        server_second_path = "SAE 3.02/server_second.py"
+        server_second_path = "server_second.py"
         
 
         try:
@@ -191,9 +191,13 @@ class Server:
             self.__envoi_message(response, client)
         
     def stop(self):
-        print("\nArrêt du serveur.")
+        print(f"{RESET}\nArrêt du serveur.")
         for server in self.secondary_servers:
-            server['socket'].send("shutdown")
+            try:
+                server['socket'].send("shutdown".encode())
+                server['socket'].close()
+            except Exception as e:
+                print(f"Erreur lors de l'arrêt du serveur secondaire : {e}")
         time.sleep(1)
         self.client_socket.close()
         self.server_socket.close()

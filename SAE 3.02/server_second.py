@@ -125,10 +125,10 @@ class Server:
 
             if os.name == 'nt':  # For Windows
                 try:
-                    chemin_fichier = f"fichiers à executer//{fichier}"
+                    chemin_fichier = f"SAE 3.02/fichiers à executer/{fichier}"
                     
                 except:
-                    chemin_fichier = f"SAE 3.02//fichiers à executer//{fichier}"
+                    chemin_fichier = f"SAE 3.02/fichiers à executer/{fichier}"
 
             else:  # For Linux/Unix
                 chemin_fichier = f"fichiers_a_executer/{fichier}"
@@ -221,7 +221,7 @@ class Server:
     def execute_script(self, fichier):
         if os.name == 'nt':  # For Windows
             try:
-                chemin_fichier = f"fichiers à executer//{fichier}"  
+                chemin_fichier = f"fichiers à executer/{fichier}"  
             except:
                 chemin_fichier = f"SAE 3.02//fichiers à executer//{fichier}"
 
