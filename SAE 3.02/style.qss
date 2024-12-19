@@ -1,96 +1,113 @@
-/* Style général de la fenêtre */
-QMainWindow, QWidget {
-    background-color: #e0e0e0;
-    color: #333;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-
-/* Style des étiquettes */
-QLabel {
+/* Style général pour l'application */
+QWidget {
+    font-family: "Arial";
     font-size: 14px;
-    color: #333;
-    font-weight: bold;
+    color: #333; /* text-color */
+    background-color: #f9f9f9; /* background-color */
 }
 
-/* Style des zones de saisie */
-QLineEdit {
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    padding: 6px;
-    background-color: #fff;
-    font-size: 14px;
-    color: #333;
-}
-
-QLineEdit:focus {
-    border-color: #0078d7;
-    background-color: #f0f8ff;
-}
-
-/* Style des cases à cocher */
-QCheckBox {
-    font-size: 14px;
-    color: #333;
-}
-
-QCheckBox::indicator {
-    width: 16px;
-    height: 16px;
-}
-
-
-
-/* Style des QListWidget */
-QListWidget {
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    padding: 6px;
-    background-color: #fff;
-    font-size: 14px;
-    color: #333;
-}
-
-/* Style des boutons */
+/* Boutons avec arrondis et effet de survol */
 QPushButton {
-    background-color: #0078d7;
+    background-color: #ff7165b9; /* primary-color */
+    border: 1px solid #ff7165b9; /* primary-color */
+    border-radius: 8px;
     color: white;
-    border-radius: 4px;
-    padding: 8px 16px;
-    font-size: 14px;
-    border: 0px;
-    font-weight: bold;
+    padding: 6px 12px;
 }
-
 QPushButton:hover {
-    background-color: #005fa3;
+    background-color: #ff7165b9; /* primary-hover-color */
 }
-
 QPushButton:pressed {
-    background-color: #004e85;
+    background-color: #ff7165b9; /* primary-pressed-color */
 }
 
-/* Style du bouton quitter */
-QPushButton#bouton_quitter {
-    background-color: #d9534f;
+/* Champs de texte avec bordures douces et focus coloré */
+QLineEdit, QTextEdit {
+    border: 1px solid #ccc; /* border-color */
+    border-radius: 5px;
+    padding: 6px;
+    background-color: #fff; /* input-background-color */
+}
+QLineEdit:focus, QTextEdit:focus {
+    border: 1px solid #ff7165b9; /* focus-border-color */
+    outline: none;
 }
 
-QPushButton#bouton_quitter:hover {
-    background-color: #c9302c;
+/* Listes déroulantes */
+QComboBox {
+    border: 1px solid #ccc; /* border-color */
+    border-radius: 5px;
+    padding: 5px;
+    background-color: #fff; /* input-background-color */
+}
+QComboBox::drop-down {
+    border: none;
+    background: transparent;
+}
+QComboBox QAbstractItemView {
+    border: 1px solid #ff7165b9; /* primary-color */
+    selection-background-color: #e8f5e9; /* selection-background-color */
+    selection-color: #333; /* text-color */
 }
 
-QPushButton#bouton_quitter:pressed {
-    background-color: #ac2925;
+/* Barre de progression */
+QProgressBar {
+    border: 1px solid #ccc; /* border-color */
+    border-radius: 5px;
+    text-align: center;
+    background-color: #e0e0e0; /* progressbar-background-color */
+}
+QProgressBar::chunk {
+    background-color: #ff7165b9; /* primary-color */
+    width: 20px;
 }
 
-/* Style du bouton d'aide */
-QPushButton#aide {
-    background-color: #5bc0de;
+/* Onglets */
+QTabWidget::pane {
+    border: 1px solid #ccc; /* border-color */
+    background: #f9f9f9; /* background-color */
+}
+QTabBar::tab {
+    background: #ddd;
+    border: 1px solid #ccc; /* border-color */
+    padding: 6px;
+    border-radius: 4px;
+}
+QTabBar::tab:selected {
+    background: #ff7165b9; /* primary-color */
+    color: white;
 }
 
-QPushButton#aide:hover {
-    background-color: #31b0d5;
+/* Labels */
+QLabel {
+    color: #333; /* text-color */
+    padding: 2px;
 }
 
-QPushButton#aide:pressed {
-    background-color: #269abc;
+/* GroupBox */
+QGroupBox {
+    border: 1px solid #ccc; /* border-color */
+    border-radius: 5px;
+    margin-top: 10px;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    padding: 0 5px;
+}
+
+/* Scrollbars */
+QScrollBar:vertical, QScrollBar:horizontal {
+    background: #f0f0f0;
+    border: 1px solid #ccc; /* border-color */
+    width: 10px;
+    margin: 0px;
+}
+QScrollBar::handle:vertical, QScrollBar::handle:horizontal {
+    background: #ff7165b9; /* primary-color */
+    border-radius: 5px;
+}
+QScrollBar::add-line, QScrollBar::sub-line {
+    background: none;
+    border: none;
 }

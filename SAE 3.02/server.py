@@ -5,6 +5,7 @@ import random
 import subprocess
 import platform
 import sys
+import os
 
 
 RED = '\033[91m'
@@ -52,8 +53,6 @@ class Server:
                 client_thread = threading.Thread(target=self.__recois, args=(client, numero_client))
                 client_thread.start()
             except Exception as e:
-                print("Server arrêté.")
-                print(e)
                 break
     
     def accept_server(self):
@@ -64,8 +63,6 @@ class Server:
                 print(f"{GREEN} [!] Connexion Serveur_{numero_serveur} : {address}")
                 self.secondary_servers.append({"socket": server,"id": numero_serveur, "état": "disponible"})
             except Exception as e:
-                print("Server arrêté.")
-                print(e)
                 break
 
     def __envoi_message(self, message, client=None):
@@ -136,10 +133,10 @@ class Server:
             
 
         if available_server:
-            print(f'{GREEN} \n[+] Serveur secondaire disponible trouvé')
+            print(f'{GREEN}\n[+] Serveur secondaire disponible trouvé')
             self.envoi_tache(task, available_server["id"], available_server, client)
         else:
-            print(f"{RED} [-] Aucun serveur secondaire disponible pour traiter la tâche.")
+            print(f"{RED}[-] Aucun serveur secondaire disponible pour traiter la tâche.")
             self.__envoi_message(f"{RED} [-] Aucun serveur secondaire disponible pour traiter la tâche.", client)
 
             
@@ -154,7 +151,7 @@ class Server:
         try:
             if platform.system() == "Windows":
                 try:
-                    subprocess.Popen(["start", "cmd", "/k", "python", server_second_path, self.ip, str(self.port_serv), str(self.max_taches), str(self.cpu_max)], shell=True)
+                    subprocess.Popen(["start", "cmd", "/k", "python", "server_second.py", self.ip, str(self.port_serv), str(self.max_taches), str(self.cpu_max)], shell=True)
                 except:
                     subprocess.Popen(["start", "cmd", "/k", "python", "server_second.py", self.ip, str(self.port_serv), str(self.max_taches), str(self.cpu_max)], shell=True)
 
@@ -171,23 +168,30 @@ class Server:
 
 
     def envoi_tache(self, task, numero_serv, available_server, client):
-        available_server['socket'].sendall(task.encode('utf-8'))
-        print(f"{BLUE} [==>] Tâche déléguée au serveur secondaire {numero_serv}")
-        time.sleep(1)
+        try:
+            available_server['socket'].sendall(task.encode('utf-8'))
+            print(f"{BLUE}[==>] Tâche déléguée au serveur secondaire {numero_serv}")
+            time.sleep(1)
+        except Exception as e:
+            print(f"{RED}[!] Erreur lors de l'envoi de la tâche au serveur secondaire {numero_serv} : {e}")
+            available_server["état"] = "indisponible"
+            threading.Thread(target=self.handle_task, args=(task, client)).start()
+            return
+        
         try:
             response = available_server["socket"].recv(10000).decode()
         except Exception as e:
-            print(f"{RED} \n[!] Erreur lors de la réception de la réponse du serveur secondaire {numero_serv} : {e}")
+            print(f"{RED}\n[!] Erreur lors de la réception de la réponse du serveur secondaire {numero_serv} : {e}")
             response = 'indisponible'
 
         if response == 'indisponible':
-            print(f"{RED} [!]Serveur secondaire {numero_serv} indisponible.")
+            print(f"{RED}[!] Serveur secondaire {numero_serv} indisponible.")
             available_server["état"] = "indisponible"
             threading.Thread(target=self.handle_task, args=(task, client)).start()
             return
         else: 
             available_server["état"] = "disponible"  
-            print(f"{BLUE} \n[<--] Réponse du serveur secondaire {numero_serv} {RESET}:\n {response}")
+            print(f"{BLUE}\n[<--] Réponse du serveur secondaire {numero_serv} {RESET}:\n {response}")
             self.__envoi_message(response, client)
         
     def stop(self):
@@ -201,7 +205,7 @@ class Server:
         time.sleep(1)
         self.client_socket.close()
         self.server_socket.close()
-        sys.exit(0)
+        os._exit(0)
 
         
 

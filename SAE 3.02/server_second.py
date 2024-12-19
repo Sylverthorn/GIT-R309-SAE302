@@ -75,7 +75,7 @@ class Server:
                 if message == 'shutdown':
                     print("\nArret du Server Secondaire")
                     self.server_socket.close()
-                    sys.exit(0)
+                    os._exit(0)
 
                 if message.startswith('script|'):
                     if self.usage_cpu > self.cpu_max:
@@ -124,12 +124,7 @@ class Server:
                 fichier = f"{nom}_{rand}.{extension}"
 
             if os.name == 'nt':  # For Windows
-                try:
-                    chemin_fichier = f"SAE 3.02/fichiers à executer/{fichier}"
-                    
-                except:
-                    chemin_fichier = f"SAE 3.02/fichiers à executer/{fichier}"
-
+                    chemin_fichier = f"fichiers à executer/{fichier}"
             else:  # For Linux/Unix
                 chemin_fichier = f"fichiers_a_executer/{fichier}"
 
@@ -137,7 +132,7 @@ class Server:
                 file.write(contenu)
 
         except Exception as e:
-            print("Erreur lors de l'enregistrement du fichier :", e)
+            print("Erreur lors de l'enregistrement du fichier :", e)  
             self.__envoi_message("Erreur lors de l'enregistrement du fichier.")
 
         return fichier

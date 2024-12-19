@@ -109,10 +109,9 @@ class ServerGUI(QWidget):
 
     def stop_server(self):
         if self.server:
-            self.server.client_socket.close()
-            self.server.server_socket.close()
+            self.server.stop()
             self.server = None
-
+    
         self.timer.stop()
         self.server_list.clear()
         self.start_stop_button.setText("Démarrer le Serveur")
