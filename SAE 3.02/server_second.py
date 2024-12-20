@@ -80,7 +80,7 @@ class Server:
                 if message.startswith('script|'):
                     if self.usage_cpu > self.cpu_max:
                         print("CPU saturé, veuillez patienter.")
-                        self.__envoi_message("indisponible")
+                        self.__envoi_message(f"indisponible|{message}")
                         
                     elif len(self.file_attente) < self.nb_taches:
                         self.file_attente.append(message)
@@ -92,7 +92,7 @@ class Server:
                     
                     else:
                         print("Tâches saturées, veuillez patienter.")
-                        self.__envoi_message("indisponible")
+                        self.__envoi_message(f"indisponible|{message}")
 
 
     def file_execution(self):
@@ -179,7 +179,7 @@ class Server:
                 return compile_result.stderr.strip()
             class_file = fichier.replace('.java', '')
             path = os.path.dirname(class_file)
-            class_file = class_file.split('\\')[-1] if os.name == 'nt' else class_file.split('/')[-1]
+            class_file = class_file.split('/')[-1] if os.name == 'nt' else class_file.split('/')[-1]
 
             run_result = subprocess.run(['java', '-cp', path, class_file], capture_output=True, text=True)
             return run_result.stdout.strip() if run_result.returncode == 0 else run_result.stderr.strip()
@@ -215,10 +215,8 @@ class Server:
 
     def execute_script(self, fichier):
         if os.name == 'nt':  # For Windows
-            try:
-                chemin_fichier = f"fichiers à executer/{fichier}"  
-            except:
-                chemin_fichier = f"SAE 3.02//fichiers à executer//{fichier}"
+        
+            chemin_fichier = f"fichiers à executer/{fichier}"  
 
         else:
             chemin_fichier = f"fichiers à executer/{fichier}"

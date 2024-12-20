@@ -24,7 +24,7 @@ class Server:
         self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
-        self.secondary_servers = [] 
+        self.serveurs_secondaires = [] 
         self.max_taches = max_taches
         self.cpu_max = cpu
         self.nb_server = nb_server
@@ -61,7 +61,7 @@ class Server:
             try:
                 server, address = self.server_socket.accept()
                 print(f"{GREEN} [!] Connexion Serveur_{numero_serveur} : {address}")
-                self.secondary_servers.append({"socket": server,"id": numero_serveur, "état": "disponible"})
+                self.serveurs_secondaires.append({"socket": server,"id": numero_serveur, "état": "disponible"})
             except Exception as e:
                 break
 
@@ -83,7 +83,7 @@ class Server:
                 
                 if message:
                     print(f"{BLUE} [<--] Message de client_{numero_client} : {RESET}\n", message)
-                    threading.Thread(target=self.handle_task, args=(message, client,)).start()
+                    threading.Thread(target=self.load_balancing, args=(message, client,)).start()
             except Exception as e:
                 print(f"{RED} [!] Client_{numero_client} déconnecté : {e}")
                 client.close()
@@ -103,30 +103,12 @@ class Server:
         for _ in range(self.nb_server):
             self.creation_servsecond()
 
-    def est_disponible(self, server):
-        try:
-            server_second = server["socket"]
-            server_second.send(b'ping')
-            response = server_second.recv(1024)
-
-            if response == b'pong':
-                server["état"] = "disponible"
-            elif response == b'pang':  # Si le serveur est saturé
-                server["état"] = "saturé"
-            else:
-                server["état"] = "indisponible"  # Par défaut si la réponse est inattendue
-        except Exception:
-            server["état"] = "indisponible"  # Si erreur de connexion, le serveur est considéré indisponible
-    def __dispo(self):
-        while True:
-            for server in self.secondary_servers:
-                self.est_disponible(server)
             
 
-    def handle_task(self, task, client):
+    def load_balancing(self, task, client):
         available_server = None
         
-        for server in self.secondary_servers:
+        for server in self.serveurs_secondaires:
             if server["état"] == "disponible":
                 available_server = server
                 break
@@ -168,6 +150,7 @@ class Server:
 
 
     def envoi_tache(self, task, numero_serv, available_server, client):
+        
         try:
             available_server['socket'].sendall(task.encode('utf-8'))
             print(f"{BLUE}[==>] Tâche déléguée au serveur secondaire {numero_serv}")
@@ -175,7 +158,7 @@ class Server:
         except Exception as e:
             print(f"{RED}[!] Erreur lors de l'envoi de la tâche au serveur secondaire {numero_serv} : {e}")
             available_server["état"] = "indisponible"
-            threading.Thread(target=self.handle_task, args=(task, client)).start()
+            threading.Thread(target=self.load_balancing, args=(task, client)).start()
             return
         
         try:
@@ -183,20 +166,24 @@ class Server:
         except Exception as e:
             print(f"{RED}\n[!] Erreur lors de la réception de la réponse du serveur secondaire {numero_serv} : {e}")
             response = 'indisponible'
+        try:
+            if response.split('|')[0] == "indisponible" or response == 'indisponible':
+                print(f"{RED}[!] Serveur secondaire {numero_serv} indisponible.")
+                a = response.split('indisponible|')[1]
+                print(f'{RESET}------------------- {a} -------------------')
+                available_server["état"] = "indisponible"
+                threading.Thread(target=self.load_balancing, args=(a, client)).start()
+                return
+            else: 
+                available_server["état"] = "disponible"  
+                print(f"{BLUE}\n[<--] Réponse du serveur secondaire {numero_serv} {RESET}:\n {response}")
+                self.__envoi_message(response, client)
+        except:
+            pass
 
-        if response == 'indisponible':
-            print(f"{RED}[!] Serveur secondaire {numero_serv} indisponible.")
-            available_server["état"] = "indisponible"
-            threading.Thread(target=self.handle_task, args=(task, client)).start()
-            return
-        else: 
-            available_server["état"] = "disponible"  
-            print(f"{BLUE}\n[<--] Réponse du serveur secondaire {numero_serv} {RESET}:\n {response}")
-            self.__envoi_message(response, client)
-        
     def stop(self):
         print(f"{RESET}\nArrêt du serveur.")
-        for server in self.secondary_servers:
+        for server in self.serveurs_secondaires:
             try:
                 server['socket'].send("shutdown".encode())
                 server['socket'].close()
@@ -205,7 +192,8 @@ class Server:
         time.sleep(1)
         self.client_socket.close()
         self.server_socket.close()
-        os._exit(0)
+        sys.exit(0)
+        
 
         
 

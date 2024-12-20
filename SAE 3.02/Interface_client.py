@@ -58,7 +58,7 @@ class MainWindow(QMainWindow):
 
         
         threading.Thread(target=self.state).start()
-        threading.Thread(target=self.redirect_stdout).start()
+        #threading.Thread(target=self.redirect_stdout).start()
         threading.Thread(target=self.resultat).start()
 
         self.bouton.clicked.connect(self.thread_demarrage)
@@ -196,28 +196,7 @@ class MainWindow(QMainWindow):
         self.client.quitter()
         QApplication.quit()
         event.accept()
-'''
-    def load_servers(self):
-        try:
-            with open("servers.json", "r") as file:
-                return json.load(file)
-        except FileNotFoundError:
-            return []
 
-    def save_servers(self, servers):
-        with open("servers.json", "w") as file:
-            json.dump(servers, file, indent=4)
-
-    def add_server(self, addr, port):
-        servers = self.load_servers()
-        servers.append({"addr": addr, "port": port})
-        self.save_servers(servers)
-
-    def remove_server(self, addr, port):
-        servers = self.load_servers()
-        servers = [server for server in servers if server["addr"] != addr or server["port"] != port]
-        self.save_servers(servers)
-'''
                
 
 

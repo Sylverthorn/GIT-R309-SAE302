@@ -8,6 +8,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import QTimer
 from PyQt6.QtGui import QFont
 from server import Server
+import time
 
 
 class ServerGUI(QWidget):
@@ -30,7 +31,7 @@ class ServerGUI(QWidget):
         main_layout.addWidget(self.start_stop_button)
 
         self.quit_button = QPushButton("Quitter l'Application")
-        self.quit_button.clicked.connect(self.close)
+        self.quit_button.clicked.connect(self.close_application)
         main_layout.addWidget(self.quit_button)
 
         main_layout.addWidget(QLabel("Liste des Serveurs Secondaires :", font=QFont("Arial", 12, QFont.Weight.Bold)))
@@ -109,17 +110,24 @@ class ServerGUI(QWidget):
 
     def stop_server(self):
         if self.server:
-            self.server.stop()
+            threading.Thread(target=self.server.stop).start()
             self.server = None
     
         self.timer.stop()
         self.server_list.clear()
         self.start_stop_button.setText("Démarrer le Serveur")
 
+    def close_application(self):
+        if self.server:
+            self.stop_server()
+            time.sleep(1)
+        self.close()
+        os._exit(0)
+
     def update_server_list(self):
         self.server_list.clear()
-        if self.server and self.server.secondary_servers:
-            for server in self.server.secondary_servers:
+        if self.server and self.server.serveurs_secondaires:
+            for server in self.server.serveurs_secondaires:
                 server_id = server["id"]
                 status = server["état"]
                 self.server_list.addItem(f"🖥️ Serveur #{server_id} | État : {status.capitalize()}")
