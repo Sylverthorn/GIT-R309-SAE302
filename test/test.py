@@ -1,5 +1,5 @@
 import time 
 
-time.sleep(30)
+time.sleep(1)
 
 print("fin---------------")

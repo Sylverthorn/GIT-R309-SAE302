@@ -5,7 +5,7 @@ import threading
 import subprocess
 import random
 import time
-
+import platform
 import psutil
 
 class Server:
@@ -123,9 +123,9 @@ class Server:
                 rand = random.randint(1, 1000)
                 fichier = f"{nom}_{rand}.{extension}"
 
-            if os.name == 'nt':  # For Windows
-                    chemin_fichier = f"fichiers à executer/{fichier}"
-            else:  # For Linux/Unix
+            if platform.system() == "Windows":  # Pour Windows
+                chemin_fichier = f"fichiers à executer/{fichier}"
+            else:  # Pour Linux/Unix/MacOS
                 chemin_fichier = f"fichiers_a_executer/{fichier}"
 
             with open(chemin_fichier, 'w', encoding='utf-8') as file:
@@ -214,12 +214,10 @@ class Server:
                 print("Erreur lors de la suppression des fichiers C++ :", e)
 
     def execute_script(self, fichier):
-        if os.name == 'nt':  # For Windows
-        
-            chemin_fichier = f"fichiers à executer/{fichier}"  
-
-        else:
+        if platform.system() == "Windows":  # Pour Windows
             chemin_fichier = f"fichiers à executer/{fichier}"
+        else:  # Pour Linux/Unix/MacOS
+            chemin_fichier = f"fichiers_a_executer/{fichier}"
 
         if fichier.endswith('.py'):
             return self.python(chemin_fichier)
