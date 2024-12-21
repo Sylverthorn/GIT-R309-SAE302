@@ -23,6 +23,7 @@ class Server:
         self.port_client = port_client
         self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.liste_clients = []
 
         self.serveurs_secondaires = [] 
         self.max_taches = max_taches
@@ -51,6 +52,7 @@ class Server:
                 client, address = self.client_socket.accept()
                 print(f"{GREEN}[!] Connexion Client_{numero_client} : " + str(address))
                 client_thread = threading.Thread(target=self.__recois, args=(client, numero_client))
+                self.liste_clients.append({"socket": client})
                 client_thread.start()
             except Exception as e:
                 break
@@ -189,6 +191,12 @@ class Server:
                 server['socket'].close()
             except Exception as e:
                 print(f"Erreur lors de l'arrêt du serveur secondaire : {e}")
+        for client in self.liste_clients:
+            try:
+                client['socket'].send("shutdown".encode())
+                client['socket'].close()
+            except Exception as e:
+                print(f"Erreur lors de l'arrêt du client : {e}")
         time.sleep(1)
         self.client_socket.close()
         self.server_socket.close()

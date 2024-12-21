@@ -77,19 +77,6 @@ class Client():
                 else:
                     print("Format non valide : seul str ou bytes est accepté.")
 
-                '''  arret à partir du terminal
-
-                if message.lower() == "bye":
-                    print("Déconnexion du client...")  
-                    self.client_socket.close()
-                    break
-
-                elif message.lower() == "arret":
-                    print("Client et serveur s'arrêtent...")
-                    self.client_socket.close()
-                    self.boucle = False
-                    break
-                '''
             except ConnectionResetError:
                 self.__reconnexion()
             
@@ -120,6 +107,12 @@ class Client():
 
                     elif reply == 'hello':
                         pass
+
+                    elif reply == 'shutdown':
+                        print("Le serveur s'est arrêté.")
+                        self.state = "shutdown"
+                        self.client_socket.close()
+                        break
                     else:
                         print("Message du serveur:", reply)
                 
