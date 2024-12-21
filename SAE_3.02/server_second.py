@@ -19,6 +19,8 @@ class Server:
         self.cpu_max = cpu
         self.usage_cpu = 0
         self.file_attente = []
+        
+    
 
     def __connect(self):
             print(f"Serveur secondaire démarré")
@@ -52,13 +54,6 @@ class Server:
         except Exception as e:
             print(e)
 
-    def utilisation_cpu(self):
-        
-        process = psutil.Process(os.getpid())  
-        while True:
-            cpu_usage = process.cpu_percent(interval=1) / psutil.cpu_count() 
-            self.cpu = round(cpu_usage, 2)
-            time.sleep(1) 
 
 
     def __recois(self):
@@ -123,10 +118,9 @@ class Server:
                 rand = random.randint(1, 1000)
                 fichier = f"{nom}_{rand}.{extension}"
 
-            if platform.system() == "Windows":  # Pour Windows
-                chemin_fichier = f"fichiers à executer/{fichier}"
-            else:  # Pour Linux/Unix/MacOS
-                chemin_fichier = f"fichiers_a_executer/{fichier}"
+            
+            chemin_fichier = f"execution/{fichier}"
+            
 
             with open(chemin_fichier, 'w', encoding='utf-8') as file:
                 file.write(contenu)
@@ -137,14 +131,26 @@ class Server:
 
         return fichier
 
+    def utilisation_cpu(self, process):
+        while process.poll() is None:
+            self.usage_cpu = psutil.cpu_percent(interval=1)
+            print(f"Utilisation CPU par le processus : {self.usage_cpu}%")
+            time.sleep(1)
+
     def python(self, fichier):
         try:
             if os.name == 'nt':  # For Windows
-                result = subprocess.run(['python', fichier], capture_output=True, text=True)
+                process = subprocess.Popen(['python', fichier], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
             else:
-                result = subprocess.run(['python3', fichier], capture_output=True, text=True)
-
-            return result.stdout.strip() if result.returncode == 0 else result.stderr.strip()
+                process = subprocess.Popen(['python3', fichier], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            
+            threading.Thread(target=self.utilisation_cpu, args=(process,)).start()
+            try:
+                stdout, stderr = process.communicate(timeout=180)
+                return stdout.strip() if process.returncode == 0 else stderr.strip()
+            except subprocess.TimeoutExpired:
+                process.kill()
+                return "Execution du script Python a été arrêtée car elle a dépassé le temps limite de 3 minutes."
         except Exception as e:
             print("Erreur lors de l'exécution du script :", e)
             return "Erreur lors de l'exécution du script."
@@ -159,8 +165,16 @@ class Server:
             result = subprocess.run(['gcc', fichier, '-o', 'output'], capture_output=True, text=True)
             if result.returncode != 0:
                 return result.stderr.strip()
-            result = subprocess.run(['./output'], capture_output=True, text=True)
-            return result.stdout.strip() if result.returncode == 0 else result.stderr.strip()
+            process = subprocess.Popen(['./output'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            threading.Thread(target=self.utilisation_cpu, args=(process,)).start()
+            
+            
+            try:
+                stdout, stderr = process.communicate(timeout=180)
+                return stdout.strip() if process.returncode == 0 else stderr.strip()
+            except subprocess.TimeoutExpired:
+                process.kill()
+                return "Execution du script C a été arrêtée car elle a dépassé le temps limite de 3 minutes."
         except Exception as e:
             print("Erreur lors de l'exécution du script C :", e)
             return "Erreur lors de l'exécution du script C."
@@ -181,8 +195,14 @@ class Server:
             path = os.path.dirname(class_file)
             class_file = class_file.split('/')[-1] if os.name == 'nt' else class_file.split('/')[-1]
 
-            run_result = subprocess.run(['java', '-cp', path, class_file], capture_output=True, text=True)
-            return run_result.stdout.strip() if run_result.returncode == 0 else run_result.stderr.strip()
+            process = subprocess.Popen(['java', '-cp', path, class_file], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            threading.Thread(target=self.utilisation_cpu, args=(process,)).start()
+            try:
+                stdout, stderr = process.communicate(timeout=180)
+                return stdout.strip() if process.returncode == 0 else stderr.strip()
+            except subprocess.TimeoutExpired:
+                process.kill()
+                return "Execution du script Java a été arrêtée car elle a dépassé le temps limite de 3 minutes."
         except Exception as e:
             print("Erreur lors de l'exécution du script Java :", e)
             return "Erreur lors de l'exécution du script Java."
@@ -200,8 +220,14 @@ class Server:
             compile_result = subprocess.run(['g++', fichier, '-o', 'output'], capture_output=True, text=True)
             if compile_result.returncode != 0:
                 return compile_result.stderr.strip()
-            run_result = subprocess.run(['./output'], capture_output=True, text=True)
-            return run_result.stdout.strip() if run_result.returncode == 0 else run_result.stderr.strip()
+            process = subprocess.Popen(['./output'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            threading.Thread(target=self.utilisation_cpu, args=(process,)).start()
+            try:
+                stdout, stderr = process.communicate(timeout=180)
+                return stdout.strip() if process.returncode == 0 else stderr.strip()
+            except subprocess.TimeoutExpired:
+                process.kill()
+                return "Execution du script C++ a été arrêtée car elle a dépassé le temps limite de 3 minutes."
         except Exception as e:
             print("Erreur lors de l'exécution du script C++ :", e)
             return "Erreur lors de l'exécution du script C++."
@@ -214,10 +240,8 @@ class Server:
                 print("Erreur lors de la suppression des fichiers C++ :", e)
 
     def execute_script(self, fichier):
-        if platform.system() == "Windows":  # Pour Windows
-            chemin_fichier = f"fichiers à executer/{fichier}"
-        else:  # Pour Linux/Unix/MacOS
-            chemin_fichier = f"fichiers_a_executer/{fichier}"
+
+        chemin_fichier = f"execution/{fichier}"
 
         if fichier.endswith('.py'):
             return self.python(chemin_fichier)
