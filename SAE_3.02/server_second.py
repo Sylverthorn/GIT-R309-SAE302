@@ -104,6 +104,7 @@ class Server:
                     réponse = f"""resultat|┌──(root㉿)-[resultat] 
 └─# {resultat}"""
                     self.__envoi_message(réponse)
+                    self.usage_cpu = 0
                     
             time.sleep(1)  # Petite pause pour permettre aux autres messages de passer
 
@@ -260,7 +261,7 @@ class Server:
 
 if __name__ == "__main__":
     if len(sys.argv) != 5:
-        print("Usage : python server_second.py <master_host> <master_port> <nb_taches>")
+        print("Usage : python server_second.py <master_host> <master_port> <nb_taches> <cpu_max>")
         sys.exit(1)
         
 
@@ -281,3 +282,11 @@ if __name__ == "__main__":
 
     server = Server(serveur_maitre, port_maitre, nb_taches, cpu_max)
     server.start()
+
+    try:
+        while True:
+            pass
+    except KeyboardInterrupt:
+        print("\nArrêt du serveur.")
+        server.server_socket.close()
+        os._exit(0)
