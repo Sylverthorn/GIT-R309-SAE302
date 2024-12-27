@@ -11,5 +11,5 @@ Ce projet, réalisé dans le cadre de la SAE 3.02, avait pour objectif de concev
 - Mécanisme de **load balancing** pour répartir la charge.
 - Exécution de programmes dans différents langages (Java, Python, C, C++).
 
-[![Vidéo de démonstration](https://img.youtube.com/vi/<VIDEO_ID>/0.jpg)](https://youtu.be/Dg3bv3Jfn0s)
-
+[![Vidéo de démonstration](https://img.youtube.com/vi/Dg3bv3Jfn0s/maxresdefault.jpg)](https://www.youtube.com/watch?v=Dg3bv3Jfn0s)
+https://www.youtube.com/watch?v=Dg3bv3Jfn0s
