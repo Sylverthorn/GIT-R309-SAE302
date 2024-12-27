@@ -48,8 +48,8 @@ class ServerGUI(QWidget):
             ("Serveur 2nd Local", "True"),
             ("Nombre Serveurs 2nd", "2"),
             ("Adresse IP Maitre", "127.0.0.1"),
-            ("Nb Tâches Max", "10"),
-            ("CPU Max", "10")
+            ("Nb Tâches Max", "2"),
+            ("CPU Max", "40")
         ]
 
         self.labels = {}

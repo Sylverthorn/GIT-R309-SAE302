@@ -1,15 +1,20 @@
 import sys
+import os
+import time
+from PyQt6.QtCore import *
 from PyQt6.QtWidgets import *
 from PyQt6.QtGui import QTextCursor, QFont
 from client import *
-import threading
-import os
+
 
 class MainWindow(QMainWindow):
+    log_signal = pyqtSignal(str)
+    result_signal = pyqtSignal(str)
+
     def __init__(self):
         super().__init__()
         self.nom_fichier = None
-        self.client = Client() 
+        self.client = Client()
 
         self.setWindowTitle("CLient")
         self.setGeometry(200, 200, 800, 400)
@@ -30,7 +35,6 @@ class MainWindow(QMainWindow):
         self.text_log = QTextEdit(readOnly=True)
         self.text_log.setPlaceholderText("Logs...")
         self.text_log.setFixedHeight(100)
-        
 
         # Premier grid layout
         grid_left = QGridLayout()
@@ -48,170 +52,121 @@ class MainWindow(QMainWindow):
         grid_right = QGridLayout()
         grid_right.addWidget(self.resutat, 0, 0, 4, 1)
         grid_right.addWidget(self.text_log, 4, 0)
-        
+
         # Layout principal pour aligner les deux grids
         main_layout = QHBoxLayout()
         main_layout.addLayout(grid_left)
         main_layout.addLayout(grid_right)
 
-        
+        widget = QWidget()
+        widget.setLayout(main_layout)
+        self.setCentralWidget(widget)
 
-        
-        threading.Thread(target=self.state).start()
-        #threading.Thread(target=self.redirect_stdout).start()
-        threading.Thread(target=self.resultat).start()
-
+        # Connexions des boutons
         self.bouton.clicked.connect(self.thread_demarrage)
         self.bouton_quitter.clicked.connect(self.ferme)
         self.bouton_envoyer.clicked.connect(self.envoyer_message)
         self.fichier.clicked.connect(self.choisir_fichier)
 
+        # Signaux
+        self.log_signal.connect(self.log_message)
+        self.result_signal.connect(self.update_results)
 
-        widget = QWidget()
-        widget.setLayout(main_layout)
-        self.setCentralWidget(widget)
-
+        # Démarrage des threads
+        self.state_thread = threading.Thread(target=self.monitor_state, daemon=True)
+        self.result_thread = threading.Thread(target=self.monitor_results, daemon=True)
+        self.state_thread.start()
+        self.result_thread.start()
 
     def ferme(self):
-        threading.Thread(target=self.client.quitter).start()
-        super().close()
-        os._exit(0)
-
-    def demarrage(self):
-    
-        if self.client.state == 'shutdown':
-            self.bouton.setText('Déconnexion')
-            self.client.connect()
-
-            self.text.setReadOnly(False)
-            self.bouton_envoyer.setEnabled(True)
-            
-        
-        elif self.client.state == 'running':
-            self.bouton.setText("Connexion")
-            self.client.arret()
-
-            self.text.setReadOnly(True)
-            self.bouton_envoyer.setEnabled(False)
-            
-
-    def envoyer_message(self):
-        if self.nom_fichier:
-            with open(self.nom_fichier, 'w', encoding='utf-8') as file:
-                file.write(self.text.toPlainText())
-        message = self.text.toPlainText()
-        if self.nom_fichier:
-            fichier = self.nom_fichier.split('/')[-1]
-            self.client.envoi("script|" + fichier + "|" + message)
-        else:
-            self.client.envoi(message)
-
-        self.text.clear()
-        self.nom_fichier = None
-
-
-    def thread_demarrage(self):
-        self.addr = self.Serveur.text()
-        self.por = self.Port.text()
-        self.client.host = self.addr
-        self.client.port = int(self.por)
-        thread = threading.Thread(target=self.demarrage)
-        thread.start()
-
-
-    def  state(self):
-        while True:
-            if self.client.state == 'shutdown':
-                self.bouton.setText("Connexion")
-                self.text.setReadOnly(True)
-                self.text.setPlaceholderText("Veuillez vous connecter au serveur pour commencer.")
-
-                self.bouton_envoyer.setEnabled(False)
-                self.bouton_envoyer.setStyleSheet("background-color: grey;")
-
-                self.fichier.setEnabled(False)
-                self.fichier.setStyleSheet("background-color: grey;")
-                
-
-
-            elif self.client.state == 'running':
-                self.bouton.setText('Déconnexion')
-                self.text.setReadOnly(False)
-                self.text.setPlaceholderText("")
-                self.bouton_envoyer.setEnabled(True)
-                self.bouton_envoyer.setStyleSheet("")
-
-                self.fichier.setEnabled(True)
-                self.fichier.setStyleSheet("")
-                
-                
-
-            time.sleep(1)
-
-    def choisir_fichier(self):
-        
-        options = QFileDialog.Option.ReadOnly  
-        file_name, _ = QFileDialog.getOpenFileName(
-            self,
-            "Choisir un fichier",             
-            "",                                
-            
-            options=options
-        )
-        if file_name and os.path.isfile(file_name):
-            try:
-                with open(file_name, 'r', encoding='utf-8') as file:  
-                    self.text.setPlainText(file.read()) 
-            except Exception as e:
-                print(f"Erreur lors de la lecture du fichier : {e}")
-        else:
-            print("Aucun fichier sélectionné ou le chemin sélectionné est un dossier.")
-        
-        self.nom_fichier = file_name
-
-
-    def redirect_stdout(self):
-        """Redirige sys.stdout pour écrire dans le QTextEdit."""
-        def write_to_text_edit(text):
-            print_sans_n = text.replace("\n", "").strip()  # Retirer les sauts de ligne
-            if print_sans_n:  # Si le texte n'est pas vide
-                self.text_log.append(print_sans_n)  # Ajouter le texte à QTextEdit
-                self.text_log.moveCursor(QTextCursor.MoveOperation.End)  # Déplacer le curseur à la fin
-                self.text_log.ensureCursorVisible()  # S'assurer que le curseur est visible
-
-        sys.stdout.write = write_to_text_edit
-
-    def resultat(self):
-        try:
-            while True:
-                if self.client.resultat:
-                    self.resutat.append(self.client.resultat)
-                    
-                    self.resutat.ensureCursorVisible()
-                    self.client.resultat = None
-        except Exception:            
-            pass
-
-    def closeEvent(self, event):
         self.client.quitter()
         QApplication.quit()
-        event.accept()
 
-               
+    def demarrage(self):
+        try:
+            if self.client.state == 'shutdown':
+                self.client.connect()
+            elif self.client.state == 'running':
+                self.client.arret()
+        except Exception as e:
+            self.log_signal.emit(f"Erreur lors du démarrage : {e}")
+
+    def envoyer_message(self):
+        try:
+            if self.nom_fichier:
+                with open(self.nom_fichier, 'w', encoding='utf-8') as file:
+                    file.write(self.text.toPlainText())
+
+            message = self.text.toPlainText()
+            if self.nom_fichier:
+                fichier = os.path.basename(self.nom_fichier)
+                self.client.envoi(f"script|{fichier}|{message}")
+            else:
+                self.client.envoi(message)
+
+            self.text.clear()
+            self.nom_fichier = None
+        except Exception as e:
+            self.log_signal.emit(f"Erreur lors de l'envoi du message : {e}")
+
+    def thread_demarrage(self):
+        self.client.host = self.Serveur.text()
+        self.client.port = int(self.Port.text())
+        threading.Thread(target=self.demarrage, daemon=True).start()
+
+    def monitor_state(self):
+        while True:
+            state = self.client.state
+            if state == 'shutdown':
+                self.bouton.setText("Connexion")
+                self.text.setReadOnly(True)
+                self.bouton_envoyer.setEnabled(False)
+                self.fichier.setEnabled(False)
+            elif state == 'running':
+                self.bouton.setText("Déconnexion")
+                self.text.setReadOnly(False)
+                self.bouton_envoyer.setEnabled(True)
+                self.fichier.setEnabled(True)
+            time.sleep(1)
+
+    def monitor_results(self):
+        while True:
+            if self.client.resultat:
+                self.result_signal.emit(self.client.resultat)
+                self.client.resultat = None
+            time.sleep(0.5)
+
+    def choisir_fichier(self):
+        file_name, _ = QFileDialog.getOpenFileName(self, "Choisir un fichier", "", "Tous les fichiers (*)")
+        if file_name:
+            try:
+                with open(file_name, 'r', encoding='utf-8') as file:
+                    self.text.setPlainText(file.read())
+                self.nom_fichier = file_name
+            except Exception as e:
+                self.log_signal.emit(f"Erreur lors de la lecture du fichier : {e}")
+
+    def log_message(self, message):
+        self.text_log.append(message)
+        self.text_log.moveCursor(QTextCursor.MoveOperation.End)
+
+    def update_results(self, result):
+        self.resutat.append(result)
+        self.resutat.moveCursor(QTextCursor.MoveOperation.End)
+
+    def closeEvent(self, event):
+        self.ferme()
+        event.accept()
 
 
 if __name__ == "__main__":
-    app = QApplication([])
+    app = QApplication(sys.argv)
 
-    # Chargement du style
     qss_path = os.path.join(os.path.dirname(__file__), "style.qss")
     if os.path.exists(qss_path):
         with open(qss_path, "r") as style_file:
             app.setStyleSheet(style_file.read())
-    else:
-        print(f"Le fichier style.qss est introuvable à : {qss_path}")
 
-    # Set a valid font family
     app.setFont(QFont("Sans Serif", 10))
     window = MainWindow()
     window.show()
