@@ -126,27 +126,47 @@ class Server:
             
 
 
+
+
     def creation_servsecond(self):
-        
-            
         server_second_path = "server_second.py"
-        
 
         try:
             if platform.system() == "Windows":
-                try:
-                    subprocess.Popen(["start", "cmd", "/k", "python", "server_second.py", self.ip, str(self.port_serv), str(self.max_taches), str(self.cpu_max)], shell=True)
-                except:
-                    subprocess.Popen(["start", "cmd", "/k", "python", "server_second.py", self.ip, str(self.port_serv), str(self.max_taches), str(self.cpu_max)], shell=True)
+                subprocess.Popen(["start", "cmd", "/k", "python", server_second_path, self.ip, str(self.port_serv), str(self.max_taches), str(self.cpu_max)], shell=True)
 
             elif platform.system() == "Linux":
-                subprocess.Popen(["gnome-terminal", "--", "python3", 'server_second.py', self.ip, str(self.port_serv), str(self.max_taches), str(self.cpu_max)])
+                # Liste des terminaux avec leurs options pour exécuter une commande
+                terminals = {
+                    "gnome-terminal": ["--"],
+                    "x-terminal-emulator": ["-e"],
+                    "konsole": ["-e"],
+                    "xfce4-terminal": ["-x"],
+                    "lxterminal": ["-e"],
+                    "mate-terminal": ["--"],
+                    "termite": ["-e"],
+                    "alacritty": ["-e"],
+                    "urxvt": ["-e"],
+                    "xterm": ["-e"]
+                }
 
-            print(f"Nouveau serveur secondaire lancé") 
+                for terminal, options in terminals.items():
+                    try:
+                        # Tente d'utiliser le terminal avec ses options
+                        subprocess.Popen([terminal, *options, "python3", server_second_path, self.ip, str(self.port_serv), str(self.max_taches), str(self.cpu_max)])
+                        print(f"Serveur lancé avec {terminal}")
+                        break  # Si succès, on sort de la boucle
+                    except FileNotFoundError:
+                        continue  # Passe au terminal suivant
+                else:
+                    raise EnvironmentError("Aucun terminal compatible trouvé sur votre système.")
+
+            print(f"Nouveau serveur secondaire lancé")
         except Exception as e:
             print(f"Erreur lors du lancement du serveur secondaire : {e}")
 
-        
+
+            
         
 
 
