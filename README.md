@@ -11,5 +11,15 @@ Ce projet, réalisé dans le cadre de la SAE 3.02, avait pour objectif de concev
 - Mécanisme de **load balancing** pour répartir la charge.
 - Exécution de programmes dans différents langages (Java, Python, C, C++).
 
+
+Directory structure:
+└── Sylverthorn-GIT-R309-SAE302/
+    ├── R309_EXAMEN/
+    ├── SAE_3.02/
+    ├── R3.09/
+    └── README.md
+
+#CI DESSOUS LA VIDEO DE PRESENTATION DES FONCTIONNALITEES
+
 [![Vidéo de démonstration](https://img.youtube.com/vi/Dg3bv3Jfn0s/maxresdefault.jpg)](https://www.youtube.com/watch?v=Dg3bv3Jfn0s)
 https://www.youtube.com/watch?v=Dg3bv3Jfn0s
