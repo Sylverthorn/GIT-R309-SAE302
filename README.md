@@ -1,23 +1,25 @@
 
 # SAE 3.02 : Architecture Client-Serveur avec Multi-Serveurs et Load Balancing
 
-## Introduction
+## A LIRE AVANT 
+## Structure du projet
+Le projet est organisé comme suit :
 
-Ce projet, réalisé dans le cadre de la SAE 3.02, avait pour objectif de concevoir une architecture Client-Serveur permettant l'exécution de programmes soumis par des clients. Le système repose sur une architecture multi-serveurs avec un serveur maître, qui gère les clients et répartit les tâches entre plusieurs serveurs secondaires pour une meilleure répartition de la charge.
+Sylverthorn-GIT-R309-SAE302/  
+├── R309_EXAMEN/  
+├── SAE_3.02/                # Dossier principal contenant les fichiers du projet.  
+│   ├── doc/                 # Documentation (installation, réponses, etc.).  
+│   └── DEV.md               # Documentation de développement.  
+├── R3.09/  
+└── README.md                # Ce fichier.  
 
-### Points clés :
-- Communication client-serveur via **sockets**.
-- Interfaces utilisateur avec **PyQt**.
-- Mécanisme de **load balancing** pour répartir la charge.
-- Exécution de programmes dans différents langages (Java, Python, C, C++).
+- **SAE_3.02/** : Contient tous les fichiers du projet.  
+  - **doc/** : Inclut la documentation pour l'installation et les réponses aux questions.  
+  - **DEV.md** : Documentation technique pour les développeurs.
 
 
-Directory structure:
-└── Sylverthorn-GIT-R309-SAE302/
-    ├── R309_EXAMEN/
-    ├── SAE_3.02/
-    ├── R3.09/
-    └── README.md
+
+
 
 # CI DESSOUS LA VIDEO DE PRESENTATION DES FONCTIONNALITEES
 
